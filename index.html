@@ -101,14 +101,6 @@
             transform: translate(-50%, -50%) translate(var(--moon-x, 0px), var(--moon-y, 0px)) scale(1);
             pointer-events: auto;
         }
-        .kpi-container {
-            opacity: 0;
-            transition: opacity 0.5s ease;
-            pointer-events: none;
-        }
-        .planet.active .kpi-container {
-            opacity: 1;
-        }
 
         /* --- Animation de zoom --- */
         .solar-system-container.zoomed-in {
@@ -117,9 +109,34 @@
         }
 
         /* --- Panneau d'information --- */
+        .kpi-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 9999px;
+            flex-shrink: 0;
+        }
         #info-panel {
             transition: transform 0.5s ease-in-out;
             transform: translateX(100%);
+        }
+        .document-item {
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .document-item:hover {
+            background-color: #2d3748; /* gray-800 */
+        }
+        .document-details {
+            display: none;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #4a5568; /* gray-600 */
+            font-size: 12px;
+            color: #a0aec0; /* gray-400 */
+        }
+        .document-item.expanded .document-details {
+            display: block;
         }
         #info-panel.visible {
             transform: translateX(0);
@@ -181,34 +198,34 @@
                 satellites: [
                     {
                         id: 's1-1', name: 'Recrutement', angle: 0, owner: 'Alice Martin', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'Procédure de sélection', tags: ['#rh', '#entretien'] }],
+                        documents: [{ name: 'Procédure de sélection', tags: ['#rh', '#entretien'], validityDate: '2025-01-15', creator: 'Alice Martin', validator: 'David Rousseau' }],
                         subProcesses: [
-                            { id: 'sp1-1-1', name: 'Définition du besoin', owner: 'Manager RH', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Fiche de poste type', tags: ['#besoin', '#rh']}] },
-                            { id: 'sp1-1-2', name: 'Sourcing candidats', owner: 'Chargé de recrutement', rights: ['Lecteur'], documents: [{ name: 'Guide des plateformes', tags: ['#sourcing']}] }
+                            { id: 'sp1-1-1', name: 'Définition du besoin', owner: 'Manager RH', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Fiche de poste type', tags: ['#besoin', '#rh'], validityDate: '2024-11-20', creator: 'Manager RH', validator: 'Alice Martin' }] },
+                            { id: 'sp1-1-2', name: 'Sourcing candidats', owner: 'Chargé de recrutement', rights: ['Lecteur'], documents: [{ name: 'Guide des plateformes', tags: ['#sourcing'], validityDate: '2025-06-30', creator: 'Chargé de recrutement', validator: 'Alice Martin' }] }
                         ]
                     },
                     {
                         id: 's1-2', name: 'Gestion de la Paie', angle: 90, owner: 'Pauline Lefevre', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'Calendrier de paie', tags: ['#paie', '#finance'] }],
+                        documents: [{ name: 'Calendrier de paie', tags: ['#paie', '#finance'], validityDate: '2024-12-31', creator: 'Pauline Lefevre', validator: 'David Rousseau' }],
                         subProcesses: [
-                            { id: 'sp1-2-1', name: 'Collecte des variables', owner: 'Gestionnaire Paie', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Fichier des primes', tags: ['#primes']}] },
-                            { id: 'sp1-2-2', name: 'Validation et virement', owner: 'Pauline Lefevre', rights: ['Approbateur'], documents: [{ name: 'Ordre de virement', tags: ['#virement']}] }
+                            { id: 'sp1-2-1', name: 'Collecte des variables', owner: 'Gestionnaire Paie', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Fichier des primes', tags: ['#primes'], validityDate: '2025-01-01', creator: 'Gestionnaire Paie', validator: 'Pauline Lefevre' }] },
+                            { id: 'sp1-2-2', name: 'Validation et virement', owner: 'Pauline Lefevre', rights: ['Approbateur'], documents: [{ name: 'Ordre de virement', tags: ['#virement'], validityDate: 'N/A', creator: 'Pauline Lefevre', validator: 'Laura Klein' }] }
                         ]
                     },
                     {
                         id: 's1-3', name: 'Formation', angle: 180, owner: 'Kevin Durant', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'Catalogue de formations', tags: ['#formation', '#compétences'] }],
+                        documents: [{ name: 'Catalogue de formations', tags: ['#formation', '#compétences'], validityDate: '2025-09-01', creator: 'Kevin Durant', validator: 'David Rousseau' }],
                         subProcesses: [
-                            { id: 'sp1-3-1', name: 'Recueil des besoins', owner: 'Manager RH', rights: ['Lecteur', 'Approbateur'], documents: [{ name: 'Sondage besoins formation', tags: ['#sondage']}] },
-                            { id: 'sp1-3-2', name: 'Organisation sessions', owner: 'Assistant RH', rights: ['Rédacteur'], documents: [{ name: 'Planning des formations', tags: ['#planning']}] }
+                            { id: 'sp1-3-1', name: 'Recueil des besoins', owner: 'Manager RH', rights: ['Lecteur', 'Approbateur'], documents: [{ name: 'Sondage besoins formation', tags: ['#sondage'], validityDate: '2025-03-01', creator: 'Manager RH', validator: 'Kevin Durant' }] },
+                            { id: 'sp1-3-2', name: 'Organisation sessions', owner: 'Assistant RH', rights: ['Rédacteur'], documents: [{ name: 'Planning des formations', tags: ['#planning'], validityDate: '2025-06-01', creator: 'Assistant RH', validator: 'Kevin Durant' }] }
                         ]
                     },
                     {
                         id: 's1-4', name: 'Gestion des Talents', angle: 270, owner: 'Valérie Pécresse', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'Revue annuelle des performances', tags: ['#performance', '#talent'] }],
+                        documents: [{ name: 'Revue annuelle des performances', tags: ['#performance', '#talent'], validityDate: '2024-10-01', creator: 'Valérie Pécresse', validator: 'David Rousseau' }],
                         subProcesses: [
-                            { id: 'sp1-4-1', name: 'Entretiens annuels', owner: 'Manager RH', rights: ['Lecteur', 'Approbateur'], documents: [{ name: 'Trame d\'entretien', tags: ['#feedback']}] },
-                            { id: 'sp1-4-2', name: 'Plans de carrière', owner: 'Valérie Pécresse', rights: ['Rédacteur'], documents: [{ name: 'Matrice de compétences', tags: ['#carrière']}] }
+                            { id: 'sp1-4-1', name: 'Entretiens annuels', owner: 'Manager RH', rights: ['Lecteur', 'Approbateur'], documents: [{ name: 'Trame d\'entretien', tags: ['#feedback'], validityDate: '2024-10-01', creator: 'Manager RH', validator: 'Valérie Pécresse' }] },
+                            { id: 'sp1-4-2', name: 'Plans de carrière', owner: 'Valérie Pécresse', rights: ['Rédacteur'], documents: [{ name: 'Matrice de compétences', tags: ['#carrière'], validityDate: '2025-02-10', creator: 'Valérie Pécresse', validator: 'David Rousseau' }] }
                         ]
                     }
                 ]
@@ -223,34 +240,34 @@
                 satellites: [
                     {
                         id: 's4-1', name: 'Facturation Client', angle: 90, owner: 'Claire Durand', rights: ['Lecteur', 'Approbateur'],
-                        documents: [{ name: 'MO: Emission facture', tags: ['#finance', '#client'] }],
+                        documents: [{ name: 'MO: Emission facture', tags: ['#finance', '#client'], validityDate: '2025-01-01', creator: 'Claire Durand', validator: 'Laura Klein' }],
                         subProcesses: [
-                            { id: 'sp4-1-1', name: 'Création facture', owner: 'Comptable', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Template facture', tags: ['#facture']}] },
-                            { id: 'sp4-1-2', name: 'Envoi et suivi', owner: 'Chargé de recouvrement', rights: ['Lecteur'], documents: [{ name: 'Procédure de relance', tags: ['#suivi']}] }
+                            { id: 'sp4-1-1', name: 'Création facture', owner: 'Comptable', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Template facture', tags: ['#facture'], validityDate: '2024-09-15', creator: 'Comptable', validator: 'Claire Durand' }] },
+                            { id: 'sp4-1-2', name: 'Envoi et suivi', owner: 'Chargé de recouvrement', rights: ['Lecteur'], documents: [{ name: 'Procédure de relance', tags: ['#suivi'], validityDate: '2025-01-20', creator: 'Chargé de recouvrement', validator: 'Claire Durand' }] }
                         ]
                     },
                     {
                         id: 's4-2', name: 'Comptabilité Fournisseur', angle: 180, owner: 'Lucas Boyer', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'Procédure de paiement', tags: ['#fournisseur', '#paiement'] }],
+                        documents: [{ name: 'Procédure de paiement', tags: ['#fournisseur', '#paiement'], validityDate: '2025-02-01', creator: 'Lucas Boyer', validator: 'Laura Klein' }],
                         subProcesses: [
-                            { id: 'sp4-2-1', name: 'Réception et validation', owner: 'Comptable Fournisseur', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Bon de commande', tags: ['#validation']}] },
-                            { id: 'sp4-2-2', name: 'Mise en paiement', owner: 'Trésorier', rights: ['Approbateur'], documents: [{ name: 'Plan de trésorerie', tags: ['#cash']}] }
+                            { id: 'sp4-2-1', name: 'Réception et validation', owner: 'Comptable Fournisseur', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Bon de commande', tags: ['#validation'], validityDate: 'N/A', creator: 'N/A', validator: 'N/A' }] },
+                            { id: 'sp4-2-2', name: 'Mise en paiement', owner: 'Trésorier', rights: ['Approbateur'], documents: [{ name: 'Plan de trésorerie', tags: ['#cash'], validityDate: '2025-03-01', creator: 'Trésorier', validator: 'Laura Klein' }] }
                         ]
                     },
                     {
                         id: 's4-3', name: 'Contrôle de Gestion', angle: 270, owner: 'Contrôleur de Gestion', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'Rapport mensuel', tags: ['#reporting', '#budget'] }],
+                        documents: [{ name: 'Rapport mensuel', tags: ['#reporting', '#budget'], validityDate: 'N/A', creator: 'Contrôleur de Gestion', validator: 'Laura Klein' }],
                         subProcesses: [
-                            { id: 'sp4-3-1', name: 'Clôture mensuelle', owner: 'Comptable Analytique', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Fichier de provisions', tags: ['#cloture']}] },
-                            { id: 'sp4-3-2', name: 'Analyse des écarts', owner: 'Contrôleur de Gestion', rights: ['Lecteur'], documents: [{ name: 'Rapport d\'analyse', tags: ['#analyse']}] }
+                            { id: 'sp4-3-1', name: 'Clôture mensuelle', owner: 'Comptable Analytique', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Fichier de provisions', tags: ['#cloture'], validityDate: 'N/A', creator: 'Comptable Analytique', validator: 'Contrôleur de Gestion' }] },
+                            { id: 'sp4-3-2', name: 'Analyse des écarts', owner: 'Contrôleur de Gestion', rights: ['Lecteur'], documents: [{ name: 'Rapport d\'analyse', tags: ['#analyse'], validityDate: 'N/A', creator: 'Contrôleur de Gestion', validator: 'Laura Klein' }] }
                         ]
                     },
                     {
                         id: 's4-4', name: 'Trésorerie', angle: 0, owner: 'Trésorier', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'Situation de trésorerie', tags: ['#cashflow'] }],
+                        documents: [{ name: 'Situation de trésorerie', tags: ['#cashflow'], validityDate: 'N/A', creator: 'Trésorier', validator: 'Laura Klein' }],
                         subProcesses: [
-                            { id: 'sp4-4-1', name: 'Gestion des flux', owner: 'Trésorier', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Prévisions de trésorerie', tags: ['#forecast']}] },
-                            { id: 'sp4-4-2', name: 'Relation bancaire', owner: 'Directeur Financier', rights: ['Approbateur'], documents: [{ name: 'Conditions bancaires', tags: ['#banque']}] }
+                            { id: 'sp4-4-1', name: 'Gestion des flux', owner: 'Trésorier', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Prévisions de trésorerie', tags: ['#forecast'], validityDate: 'N/A', creator: 'Trésorier', validator: 'Laura Klein' }] },
+                            { id: 'sp4-4-2', name: 'Relation bancaire', owner: 'Directeur Financier', rights: ['Approbateur'], documents: [{ name: 'Conditions bancaires', tags: ['#banque'], validityDate: '2025-05-20', creator: 'Directeur Financier', validator: 'Laura Klein' }] }
                         ]
                     }
                 ]
@@ -266,34 +283,34 @@
                 satellites: [
                     {
                         id: 's2-1', name: 'Génération de Leads', angle: 0, owner: 'Carole Dubois', rights: ['Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'Guide de campagne pub', tags: ['#marketing', '#ads'] }],
+                        documents: [{ name: 'Guide de campagne pub', tags: ['#marketing', '#ads'], validityDate: '2025-01-01', creator: 'Carole Dubois', validator: 'Stéphane Plaza' }],
                         subProcesses: [
-                            { id: 'sp2-1-1', name: 'Campagne emailing', owner: 'Marketing Ops', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Liste de diffusion', tags: ['#emailing']}] },
-                            { id: 'sp2-1-2', name: 'Publicité en ligne', owner: 'Spécialiste SEA', rights: ['Lecteur', 'Rédacteur'], documents: [{ name: 'Rapport de performance Ads', tags: ['#ads']}] },
+                            { id: 'sp2-1-1', name: 'Campagne emailing', owner: 'Marketing Ops', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Liste de diffusion', tags: ['#emailing'], validityDate: 'N/A', creator: 'Marketing Ops', validator: 'Carole Dubois' }] },
+                            { id: 'sp2-1-2', name: 'Publicité en ligne', owner: 'Spécialiste SEA', rights: ['Lecteur', 'Rédacteur'], documents: [{ name: 'Rapport de performance Ads', tags: ['#ads'], validityDate: 'N/A', creator: 'Spécialiste SEA', validator: 'Carole Dubois' }] },
                         ]
                     },
                     {
                         id: 's2-2', name: 'Closing', angle: 90, owner: 'Jean-Claude Convenant', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'Argumentaire de vente', tags: ['#vente', '#closing'] }],
+                        documents: [{ name: 'Argumentaire de vente', tags: ['#vente', '#closing'], validityDate: '2025-03-15', creator: 'Jean-Claude Convenant', validator: 'Stéphane Plaza' }],
                         subProcesses: [
-                            { id: 'sp2-2-1', name: 'Qualification prospect', owner: 'Commercial', rights: ['Rédacteur'], documents: [{ name: 'Script de qualification', tags: ['#prospect']}] },
-                            { id: 'sp2-2-2', name: 'Négociation', owner: 'Directeur Commercial', rights: ['Approbateur'], documents: [{ name: 'Grille tarifaire', tags: ['#negociation']}] },
+                            { id: 'sp2-2-1', name: 'Qualification prospect', owner: 'Commercial', rights: ['Rédacteur'], documents: [{ name: 'Script de qualification', tags: ['#prospect'], validityDate: '2024-11-01', creator: 'Jean-Claude Convenant', validator: 'Stéphane Plaza' }] },
+                            { id: 'sp2-2-2', name: 'Négociation', owner: 'Directeur Commercial', rights: ['Approbateur'], documents: [{ name: 'Grille tarifaire', tags: ['#negociation'], validityDate: '2025-01-01', creator: 'Directeur Commercial', validator: 'Stéphane Plaza' }] },
                         ]
                     },
                     {
                         id: 's2-3', name: 'Marketing de Contenu', angle: 180, owner: 'Content Manager', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'Blog d\'entreprise', tags: ['#content', '#inbound'] }],
+                        documents: [{ name: 'Blog d\'entreprise', tags: ['#content', '#inbound'], validityDate: 'N/A', creator: 'Content Manager', validator: 'Stéphane Plaza' }],
                         subProcesses: [
-                            { id: 'sp2-3-1', name: 'Rédaction d\'articles', owner: 'Rédacteur Web', rights: ['Rédacteur'], documents: [{ name: 'Calendrier éditorial', tags: ['#blog']}] },
-                            { id: 'sp2-3-2', name: 'Production de vidéos', owner: 'Vidéaste', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Storyboard', tags: ['#video']}] },
+                            { id: 'sp2-3-1', name: 'Rédaction d\'articles', owner: 'Rédacteur Web', rights: ['Rédacteur'], documents: [{ name: 'Calendrier éditorial', tags: ['#blog'], validityDate: 'N/A', creator: 'Rédacteur Web', validator: 'Content Manager' }] },
+                            { id: 'sp2-3-2', name: 'Production de vidéos', owner: 'Vidéaste', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Storyboard', tags: ['#video'], validityDate: 'N/A', creator: 'Vidéaste', validator: 'Content Manager' }] },
                         ]
                     },
                     {
                         id: 's2-4', name: 'Gestion CRM', angle: 270, owner: 'CRM Manager', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'Règles de saisie CRM', tags: ['#crm', '#data'] }],
+                        documents: [{ name: 'Règles de saisie CRM', tags: ['#crm', '#data'], validityDate: '2024-09-01', creator: 'CRM Manager', validator: 'Stéphane Plaza' }],
                         subProcesses: [
-                            { id: 'sp2-4-1', name: 'Nettoyage de la base', owner: 'Data Analyst', rights: ['Rédacteur'], documents: [{ name: 'Rapport de qualité de données', tags: ['#dataquality']}] },
-                            { id: 'sp2-4-2', name: 'Formation des équipes', owner: 'CRM Manager', rights: ['Approbateur'], documents: [{ name: 'Support de formation', tags: ['#formation']}] },
+                            { id: 'sp2-4-1', name: 'Nettoyage de la base', owner: 'Data Analyst', rights: ['Rédacteur'], documents: [{ name: 'Rapport de qualité de données', tags: ['#dataquality'], validityDate: 'N/A', creator: 'Data Analyst', validator: 'CRM Manager' }] },
+                            { id: 'sp2-4-2', name: 'Formation des équipes', owner: 'CRM Manager', rights: ['Approbateur'], documents: [{ name: 'Support de formation', tags: ['#formation'], validityDate: '2025-04-10', creator: 'CRM Manager', validator: 'Stéphane Plaza' }] },
                         ]
                     }
                 ]
@@ -308,34 +325,34 @@
                 satellites: [
                     {
                         id: 's5-1', name: 'Maintenance Infra', angle: 45, owner: 'Marc Petit', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'Procédure de backup', tags: ['#it', '#sécurité'] }],
+                        documents: [{ name: 'Procédure de backup', tags: ['#it', '#sécurité'], validityDate: '2025-01-20', creator: 'Marc Petit', validator: 'Elon Musk' }],
                         subProcesses: [
-                            { id: 'sp5-1-1', name: 'Sauvegardes quotidiennes', owner: 'Admin Sys', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Log des sauvegardes', tags: ['#backup']}] },
-                            { id: 'sp5-1-2', name: 'Mise à jour sécurité', owner: 'Ingénieur Sécurité', rights: ['Approbateur'], documents: [{ name: 'Rapport de vulnérabilité', tags: ['#patch']}] },
+                            { id: 'sp5-1-1', name: 'Sauvegardes quotidiennes', owner: 'Admin Sys', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Log des sauvegardes', tags: ['#backup'], validityDate: 'N/A', creator: 'Admin Sys', validator: 'Marc Petit' }] },
+                            { id: 'sp5-1-2', name: 'Mise à jour sécurité', owner: 'Ingénieur Sécurité', rights: ['Approbateur'], documents: [{ name: 'Rapport de vulnérabilité', tags: ['#patch'], validityDate: 'N/A', creator: 'Ingénieur Sécurité', validator: 'Marc Petit' }] },
                         ]
                     },
                      {
                         id: 's5-2', name: 'Support Utilisateur', angle: 135, owner: 'Jennifer Aniston', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'Base de connaissance', tags: ['#support', '#faq'] }],
+                        documents: [{ name: 'Base de connaissance', tags: ['#support', '#faq'], validityDate: '2025-06-01', creator: 'Jennifer Aniston', validator: 'Elon Musk' }],
                         subProcesses: [
-                            { id: 'sp5-2-1', name: 'Hotline N1', owner: 'Technicien Support', rights: ['Rédacteur'], documents: [{ name: 'Catalogue de solutions', tags: ['#n1']}] },
-                            { id: 'sp5-2-2', name: 'Gestion des tickets', owner: 'Jennifer Aniston', rights: ['Approbateur'], documents: [{ name: 'SLA de résolution', tags: ['#tickets']}] },
+                            { id: 'sp5-2-1', name: 'Hotline N1', owner: 'Technicien Support', rights: ['Rédacteur'], documents: [{ name: 'Catalogue de solutions', tags: ['#n1'], validityDate: '2025-04-01', creator: 'Technicien Support', validator: 'Jennifer Aniston' }] },
+                            { id: 'sp5-2-2', name: 'Gestion des tickets', owner: 'Jennifer Aniston', rights: ['Approbateur'], documents: [{ name: 'SLA de résolution', tags: ['#tickets'], validityDate: '2025-01-01', creator: 'Jennifer Aniston', validator: 'Elon Musk' }] },
                         ]
                     },
                     {
                         id: 's5-3', name: 'Développement Applicatif', angle: 225, owner: 'Bill Gates', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'Roadmap applicative', tags: ['#dev', '#apps'] }],
+                        documents: [{ name: 'Roadmap applicative', tags: ['#dev', '#apps'], validityDate: '2025-01-01', creator: 'Bill Gates', validator: 'Elon Musk' }],
                         subProcesses: [
-                            { id: 'sp5-3-1', name: 'Recueil des besoins métier', owner: 'Chef de Projet', rights: ['Rédacteur'], documents: [{ name: 'Cahier des charges', tags: ['#besoins']}] },
-                            { id: 'sp5-3-2', name: 'Développement et tests', owner: 'Développeur Fullstack', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Code source', tags: ['#git']}] },
+                            { id: 'sp5-3-1', name: 'Recueil des besoins métier', owner: 'Chef de Projet', rights: ['Rédacteur'], documents: [{ name: 'Cahier des charges', tags: ['#besoins'], validityDate: 'N/A', creator: 'Chef de Projet', validator: 'Bill Gates' }] },
+                            { id: 'sp5-3-2', name: 'Développement et tests', owner: 'Développeur Fullstack', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Code source', tags: ['#git'], validityDate: 'N/A', creator: 'Développeur Fullstack', validator: 'Bill Gates' }] },
                         ]
                     },
                     {
                         id: 's5-4', name: 'Cybersécurité', angle: 315, owner: 'Kevin Mitnick', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'Politique de sécurité (PSSI)', tags: ['#cyber', '#security'] }],
+                        documents: [{ name: 'Politique de sécurité (PSSI)', tags: ['#cyber', '#security'], validityDate: '2025-01-01', creator: 'Kevin Mitnick', validator: 'Elon Musk' }],
                         subProcesses: [
-                            { id: 'sp5-4-1', name: 'Veille sur les menaces', owner: 'Analyste Sécurité', rights: ['Lecteur'], documents: [{ name: 'Rapport de veille', tags: ['#threats']}] },
-                            { id: 'sp5-4-2', name: 'Tests d\'intrusion', owner: 'Pentester', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Rapport de pentest', tags: ['#pentest']}] },
+                            { id: 'sp5-4-1', name: 'Veille sur les menaces', owner: 'Analyste Sécurité', rights: ['Lecteur'], documents: [{ name: 'Rapport de veille', tags: ['#threats'], validityDate: 'N/A', creator: 'Analyste Sécurité', validator: 'Kevin Mitnick' }] },
+                            { id: 'sp5-4-2', name: 'Tests d\'intrusion', owner: 'Pentester', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Rapport de pentest', tags: ['#pentest'], validityDate: 'N/A', creator: 'Pentester', validator: 'Kevin Mitnick' }] },
                         ]
                     }
                 ]
@@ -350,34 +367,34 @@
                 satellites: [
                     {
                         id: 's7-1', name: 'Audit Interne', angle: 45, owner: 'Sophie Lambert', rights: ['Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'Plan d\'audit annuel', tags: ['#qualité', '#iso9001'] }],
+                        documents: [{ name: 'Plan d\'audit annuel', tags: ['#qualité', '#iso9001'], validityDate: '2025-01-01', creator: 'Sophie Lambert', validator: 'Angela Merkel' }],
                         subProcesses: [
-                            { id: 'sp7-1-1', name: 'Planification de l\'audit', owner: 'Sophie Lambert', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Checklist d\'audit', tags: ['#planning']}] },
-                            { id: 'sp7-1-2', name: 'Rédaction du rapport', owner: 'Sophie Lambert', rights: ['Approbateur'], documents: [{ name: 'Modèle de rapport', tags: ['#rapport']}] }
+                            { id: 'sp7-1-1', name: 'Planification de l\'audit', owner: 'Sophie Lambert', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Checklist d\'audit', tags: ['#planning'], validityDate: '2024-12-01', creator: 'Sophie Lambert', validator: 'Angela Merkel' }] },
+                            { id: 'sp7-1-2', name: 'Rédaction du rapport', owner: 'Sophie Lambert', rights: ['Approbateur'], documents: [{ name: 'Modèle de rapport', tags: ['#rapport'], validityDate: '2024-10-01', creator: 'Sophie Lambert', validator: 'Angela Merkel' }] }
                         ]
                     },
                     {
                         id: 's7-2', name: 'Gestion Documentaire', angle: 135, owner: 'Juste Leblanc', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'Arborescence documentaire', tags: ['#ged', '#processus'] }],
+                        documents: [{ name: 'Arborescence documentaire', tags: ['#ged', '#processus'], validityDate: '2025-01-15', creator: 'Juste Leblanc', validator: 'Angela Merkel' }],
                         subProcesses: [
-                            { id: 'sp7-2-1', name: 'Approbation des documents', owner: 'Juste Leblanc', rights: ['Approbateur'], documents: [{ name: 'Workflow de validation', tags: ['#workflow']}] },
-                            { id: 'sp7-2-2', name: 'Archivage', owner: 'Archiviste', rights: ['Rédacteur'], documents: [{ name: 'Politique d\'archivage', tags: ['#archivage']}] }
+                            { id: 'sp7-2-1', name: 'Approbation des documents', owner: 'Juste Leblanc', rights: ['Approbateur'], documents: [{ name: 'Workflow de validation', tags: ['#workflow'], validityDate: '2025-01-15', creator: 'Juste Leblanc', validator: 'Angela Merkel' }] },
+                            { id: 'sp7-2-2', name: 'Archivage', owner: 'Archiviste', rights: ['Rédacteur'], documents: [{ name: 'Politique d\'archivage', tags: ['#archivage'], validityDate: '2024-09-20', creator: 'Archiviste', validator: 'Juste Leblanc' }] }
                         ]
                     },
                     {
                         id: 's7-3', name: 'Amélioration Continue', angle: 225, owner: 'Kaizen', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'Roue de Deming (PDCA)', tags: ['#pdca', '#amélioration'] }],
+                        documents: [{ name: 'Roue de Deming (PDCA)', tags: ['#pdca', '#amélioration'], validityDate: '2024-08-01', creator: 'Kaizen', validator: 'Angela Merkel' }],
                         subProcesses: [
-                            { id: 'sp7-3-1', name: 'Analyse des causes racines', owner: 'Qualiticien', rights: ['Rédacteur'], documents: [{ name: 'Diagramme d\'Ishikawa', tags: ['#ishikawa']}] },
-                            { id: 'sp7-3-2', name: 'Suivi des actions correctives', owner: 'Kaizen', rights: ['Approbateur'], documents: [{ name: 'Plan d\'actions', tags: ['#actions']}] }
+                            { id: 'sp7-3-1', name: 'Analyse des causes racines', owner: 'Qualiticien', rights: ['Rédacteur'], documents: [{ name: 'Diagramme d\'Ishikawa', tags: ['#ishikawa'], validityDate: 'N/A', creator: 'Qualiticien', validator: 'Kaizen' }] },
+                            { id: 'sp7-3-2', name: 'Suivi des actions correctives', owner: 'Kaizen', rights: ['Approbateur'], documents: [{ name: 'Plan d\'actions', tags: ['#actions'], validityDate: 'N/A', creator: 'Kaizen', validator: 'Angela Merkel' }] }
                         ]
                     },
                     {
                         id: 's7-4', name: 'Contrôle Qualité Produit', angle: 315, owner: 'Inspecteur Gadget', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'Plan de contrôle', tags: ['#qc', '#produit'] }],
+                        documents: [{ name: 'Plan de contrôle', tags: ['#qc', '#produit'], validityDate: '2025-03-01', creator: 'Inspecteur Gadget', validator: 'Angela Merkel' }],
                         subProcesses: [
-                            { id: 'sp7-4-1', name: 'Contrôle à réception', owner: 'Contrôleur Qualité', rights: ['Rédacteur'], documents: [{ name: 'Fiche de contrôle', tags: ['#reception']}] },
-                            { id: 'sp7-4-2', name: 'Contrôle en production', owner: 'Opérateur', rights: ['Lecteur', 'Approbateur'], documents: [{ name: 'Gammes de contrôle', tags: ['#production']}] }
+                            { id: 'sp7-4-1', name: 'Contrôle à réception', owner: 'Contrôleur Qualité', rights: ['Rédacteur'], documents: [{ name: 'Fiche de contrôle', tags: ['#reception'], validityDate: '2025-03-01', creator: 'Contrôleur Qualité', validator: 'Inspecteur Gadget' }] },
+                            { id: 'sp7-4-2', name: 'Contrôle en production', owner: 'Opérateur', rights: ['Lecteur', 'Approbateur'], documents: [{ name: 'Gammes de contrôle', tags: ['#production'], validityDate: '2025-03-01', creator: 'Opérateur', validator: 'Inspecteur Gadget' }] }
                         ]
                     }
                 ]
@@ -393,34 +410,34 @@
                 satellites: [
                     {
                         id: 's3-1', name: 'Planification', angle: 30, owner: 'Eva Moreau', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'MO: Lancement production', tags: ['#planning'] }],
+                        documents: [{ name: 'MO: Lancement production', tags: ['#planning'], validityDate: '2025-01-01', creator: 'Eva Moreau', validator: 'Mary Barra' }],
                         subProcesses: [
-                            { id: 'sp3-1-1', name: 'Prévision de la demande', owner: 'Supply Chain Planner', rights: ['Lecteur', 'Approbateur'], documents: [{ name: 'Historique des ventes', tags: ['#forecast']}] },
-                            { id: 'sp3-1-2', name: 'Ordonnancement', owner: 'Planificateur', rights: ['Rédacteur'], documents: [{ name: 'Planning de production', tags: ['#schedule']}] }
+                            { id: 'sp3-1-1', name: 'Prévision de la demande', owner: 'Supply Chain Planner', rights: ['Lecteur', 'Approbateur'], documents: [{ name: 'Historique des ventes', tags: ['#forecast'], validityDate: 'N/A', creator: 'Supply Chain Planner', validator: 'Eva Moreau' }] },
+                            { id: 'sp3-1-2', name: 'Ordonnancement', owner: 'Planificateur', rights: ['Rédacteur'], documents: [{ name: 'Planning de production', tags: ['#schedule'], validityDate: 'N/A', creator: 'Planificateur', validator: 'Eva Moreau' }] }
                         ]
                     },
                     {
                         id: 's3-2', name: 'Expédition', angle: 110, owner: 'Didier Deschamps', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'Procédure d\'emballage', tags: ['#logistique', '#transport'] }],
+                        documents: [{ name: 'Procédure d\'emballage', tags: ['#logistique', '#transport'], validityDate: '2024-11-10', creator: 'Didier Deschamps', validator: 'Mary Barra' }],
                         subProcesses: [
-                            { id: 'sp3-2-1', name: 'Préparation de commande', owner: 'Préparateur de commande', rights: ['Rédacteur'], documents: [{ name: 'Bon de préparation', tags: ['#picking']}] },
-                            { id: 'sp3-2-2', name: 'Gestion des transporteurs', owner: 'Didier Deschamps', rights: ['Approbateur'], documents: [{ name: 'Contrats transporteurs', tags: ['#transport']}] }
+                            { id: 'sp3-2-1', name: 'Préparation de commande', owner: 'Préparateur de commande', rights: ['Rédacteur'], documents: [{ name: 'Bon de préparation', tags: ['#picking'], validityDate: 'N/A', creator: 'Préparateur de commande', validator: 'Didier Deschamps' }] },
+                            { id: 'sp3-2-2', name: 'Gestion des transporteurs', owner: 'Didier Deschamps', rights: ['Approbateur'], documents: [{ name: 'Contrats transporteurs', tags: ['#transport'], validityDate: '2025-07-01', creator: 'Didier Deschamps', validator: 'Mary Barra' }] }
                         ]
                     },
                     {
                         id: 's3-3', name: 'Gestion des Stocks', angle: 190, owner: 'Gérard Magasin', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'Politique de stock', tags: ['#stock', '#inventaire'] }],
+                        documents: [{ name: 'Politique de stock', tags: ['#stock', '#inventaire'], validityDate: '2025-01-01', creator: 'Gérard Magasin', validator: 'Mary Barra' }],
                         subProcesses: [
-                            { id: 'sp3-3-1', name: 'Inventaire tournant', owner: 'Magasinier', rights: ['Rédacteur'], documents: [{ name: 'Fiche de comptage', tags: ['#inventaire']}] },
-                            { id: 'sp3-3-2', name: 'Analyse des écarts', owner: 'Gérard Magasin', rights: ['Approbateur'], documents: [{ name: 'Rapport d\'écarts', tags: ['#analyse']}] }
+                            { id: 'sp3-3-1', name: 'Inventaire tournant', owner: 'Magasinier', rights: ['Rédacteur'], documents: [{ name: 'Fiche de comptage', tags: ['#inventaire'], validityDate: 'N/A', creator: 'Magasinier', validator: 'Gérard Magasin' }] },
+                            { id: 'sp3-3-2', name: 'Analyse des écarts', owner: 'Gérard Magasin', rights: ['Approbateur'], documents: [{ name: 'Rapport d\'écarts', tags: ['#analyse'], validityDate: 'N/A', creator: 'Gérard Magasin', validator: 'Mary Barra' }] }
                         ]
                     },
                     {
                         id: 's3-4', name: 'Maintenance Équipements', angle: 270, owner: 'Bob le Bricoleur', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'Plan de maintenance préventive', tags: ['#maintenance', '#tpm'] }],
+                        documents: [{ name: 'Plan de maintenance préventive', tags: ['#maintenance', '#tpm'], validityDate: '2025-02-01', creator: 'Bob le Bricoleur', validator: 'Mary Barra' }],
                         subProcesses: [
-                            { id: 'sp3-4-1', name: 'Maintenance préventive', owner: 'Technicien Maintenance', rights: ['Rédacteur'], documents: [{ name: 'Gammes de maintenance', tags: ['#preventive']}] },
-                            { id: 'sp3-4-2', name: 'Maintenance curative', owner: 'Technicien Maintenance', rights: ['Lecteur', 'Approbateur'], documents: [{ name: 'Rapport d\'intervention', tags: ['#curative']}] }
+                            { id: 'sp3-4-1', name: 'Maintenance préventive', owner: 'Technicien Maintenance', rights: ['Rédacteur'], documents: [{ name: 'Gammes de maintenance', tags: ['#preventive'], validityDate: '2025-02-01', creator: 'Technicien Maintenance', validator: 'Bob le Bricoleur' }] },
+                            { id: 'sp3-4-2', name: 'Maintenance curative', owner: 'Technicien Maintenance', rights: ['Lecteur', 'Approbateur'], documents: [{ name: 'Rapport d\'intervention', tags: ['#curative'], validityDate: 'N/A', creator: 'Technicien Maintenance', validator: 'Bob le Bricoleur' }] }
                         ]
                     }
                 ]
@@ -435,34 +452,34 @@
                 satellites: [
                     {
                         id: 's6-1', name: 'Veille Technologique', angle: 220, owner: 'Luc Bernard', rights: ['Lecteur', 'Approbateur'],
-                        documents: [{ name: 'Rapport de veille mensuel', tags: ['#innovation'] }],
+                        documents: [{ name: 'Rapport de veille mensuel', tags: ['#innovation'], validityDate: 'N/A', creator: 'Luc Bernard', validator: 'Gitanjali Rao' }],
                         subProcesses: [
-                            { id: 'sp6-1-1', name: 'Analyse concurrentielle', owner: 'Analyste', rights: ['Lecteur', 'Approbateur'], documents: [{ name: 'Benchmark concurrents', tags: ['#veille']}] },
-                            { id: 'sp6-1-2', name: 'Recherche de publications', owner: 'Chercheur', rights: ['Lecteur'], documents: [{ name: 'Synthèse articles', tags: ['#recherche']}] }
+                            { id: 'sp6-1-1', name: 'Analyse concurrentielle', owner: 'Analyste', rights: ['Lecteur', 'Approbateur'], documents: [{ name: 'Benchmark concurrents', tags: ['#veille'], validityDate: 'N/A', creator: 'Analyste', validator: 'Luc Bernard' }] },
+                            { id: 'sp6-1-2', name: 'Recherche de publications', owner: 'Chercheur', rights: ['Lecteur'], documents: [{ name: 'Synthèse articles', tags: ['#recherche'], validityDate: 'N/A', creator: 'Chercheur', validator: 'Luc Bernard' }] }
                         ]
                     },
                     {
                         id: 's6-2', name: 'Développement Produit', angle: 300, owner: 'Marie Curie', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'Spécifications fonctionnelles', tags: ['#dev', '#produit'] }],
+                        documents: [{ name: 'Spécifications fonctionnelles', tags: ['#dev', '#produit'], validityDate: 'N/A', creator: 'Marie Curie', validator: 'Gitanjali Rao' }],
                         subProcesses: [
-                            { id: 'sp6-2-1', name: 'Prototypage', owner: 'Ingénieur Produit', rights: ['Rédacteur'], documents: [{ name: 'Maquette V1', tags: ['#prototype']}] },
-                            { id: 'sp6-2-2', name: 'Tests et validation', owner: 'QA Tester', rights: ['Lecteur', 'Approbateur'], documents: [{ name: 'Rapport de tests', tags: ['#tests']}] }
+                            { id: 'sp6-2-1', name: 'Prototypage', owner: 'Ingénieur Produit', rights: ['Rédacteur'], documents: [{ name: 'Maquette V1', tags: ['#prototype'], validityDate: 'N/A', creator: 'Ingénieur Produit', validator: 'Marie Curie' }] },
+                            { id: 'sp6-2-2', name: 'Tests et validation', owner: 'QA Tester', rights: ['Lecteur', 'Approbateur'], documents: [{ name: 'Rapport de tests', tags: ['#tests'], validityDate: 'N/A', creator: 'QA Tester', validator: 'Marie Curie' }] }
                         ]
                     },
                     {
                         id: 's6-3', name: 'Gestion de Projet R&D', angle: 20, owner: 'Chef de Projet R&D', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'Diagramme de Gantt', tags: ['#gantt', '#planning'] }],
+                        documents: [{ name: 'Diagramme de Gantt', tags: ['#gantt', '#planning'], validityDate: 'N/A', creator: 'Chef de Projet R&D', validator: 'Gitanjali Rao' }],
                         subProcesses: [
-                            { id: 'sp6-3-1', name: 'Définition du cahier des charges', owner: 'Chef de Projet R&D', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Cahier des charges', tags: ['#cdc']}] },
-                            { id: 'sp6-3-2', name: 'Suivi du budget', owner: 'Contrôleur de Gestion', rights: ['Lecteur'], documents: [{ name: 'Suivi budgétaire', tags: ['#budget']}] }
+                            { id: 'sp6-3-1', name: 'Définition du cahier des charges', owner: 'Chef de Projet R&D', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Cahier des charges', tags: ['#cdc'], validityDate: 'N/A', creator: 'Chef de Projet R&D', validator: 'Gitanjali Rao' }] },
+                            { id: 'sp6-3-2', name: 'Suivi du budget', owner: 'Contrôleur de Gestion', rights: ['Lecteur'], documents: [{ name: 'Suivi budgétaire', tags: ['#budget'], validityDate: 'N/A', creator: 'Contrôleur de Gestion', validator: 'Chef de Projet R&D' }] }
                         ]
                     },
                     {
                         id: 's6-4', name: 'Propriété Intellectuelle', angle: 100, owner: 'Juriste PI', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'Portefeuille de brevets', tags: ['#pi', '#brevet'] }],
+                        documents: [{ name: 'Portefeuille de brevets', tags: ['#pi', '#brevet'], validityDate: 'N/A', creator: 'Juriste PI', validator: 'Gitanjali Rao' }],
                         subProcesses: [
-                            { id: 'sp6-4-1', name: 'Analyse de brevetabilité', owner: 'Ingénieur Brevet', rights: ['Rédacteur'], documents: [{ name: 'Rapport d\'antériorité', tags: ['#brevet']}] },
-                            { id: 'sp6-4-2', name: 'Dépôt de brevet', owner: 'Juriste PI', rights: ['Approbateur'], documents: [{ name: 'Dossier de dépôt', tags: ['#dépôt']}] }
+                            { id: 'sp6-4-1', name: 'Analyse de brevetabilité', owner: 'Ingénieur Brevet', rights: ['Rédacteur'], documents: [{ name: 'Rapport d\'antériorité', tags: ['#brevet'], validityDate: 'N/A', creator: 'Ingénieur Brevet', validator: 'Juriste PI' }] },
+                            { id: 'sp6-4-2', name: 'Dépôt de brevet', owner: 'Juriste PI', rights: ['Approbateur'], documents: [{ name: 'Dossier de dépôt', tags: ['#dépôt'], validityDate: 'N/A', creator: 'Juriste PI', validator: 'Gitanjali Rao' }] }
                         ]
                     }
                 ]
@@ -477,34 +494,34 @@
                 satellites: [
                     {
                         id: 's8-1', name: 'Sourcing Fournisseurs', angle: 100, owner: 'Hélène Fournier', rights: ['Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'Procédure de sélection', tags: ['#achats'] }],
+                        documents: [{ name: 'Procédure de sélection', tags: ['#achats'], validityDate: '2025-02-15', creator: 'Hélène Fournier', validator: 'Jeff Bezos' }],
                         subProcesses: [
-                            { id: 's8-1-1', name: 'Identification fournisseurs', owner: 'Acheteur', rights: ['Lecteur', 'Approbateur'], documents: [{ name: 'Liste de fournisseurs', tags: ['#sourcing']}] },
-                            { id: 's8-1-2', name: 'Appel d\'offres', owner: 'Hélène Fournier', rights: ['Rédacteur'], documents: [{ name: 'Dossier d\'appel d\'offres', tags: ['#tender']}] }
+                            { id: 'sp8-1-1', name: 'Identification fournisseurs', owner: 'Acheteur', rights: ['Lecteur', 'Approbateur'], documents: [{ name: 'Liste de fournisseurs', tags: ['#sourcing'], validityDate: 'N/A', creator: 'Acheteur', validator: 'Hélène Fournier' }] },
+                            { id: 'sp8-1-2', name: 'Appel d\'offres', owner: 'Hélène Fournier', rights: ['Rédacteur'], documents: [{ name: 'Dossier d\'appel d\'offres', tags: ['#tender'], validityDate: 'N/A', creator: 'Hélène Fournier', validator: 'Jeff Bezos' }] }
                         ]
                     },
                     {
                         id: 's8-2', name: 'Gestion des Commandes', angle: 200, owner: 'John Doe', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'Politique d\'achat', tags: ['#commande'] }],
+                        documents: [{ name: 'Politique d\'achat', tags: ['#commande'], validityDate: '2025-01-20', creator: 'John Doe', validator: 'Jeff Bezos' }],
                         subProcesses: [
-                            { id: 's8-2-1', name: 'Passation de commande', owner: 'Approvisionneur', rights: ['Rédacteur'], documents: [{ name: 'Bon de commande type', tags: ['#po']}] },
-                            { id: 's8-2-2', name: 'Suivi de livraison', owner: 'Approvisionneur', rights: ['Lecteur'], documents: [{ name: 'Accusé de réception', tags: ['#livraison']}] }
+                            { id: 'sp8-2-1', name: 'Passation de commande', owner: 'Approvisionneur', rights: ['Rédacteur'], documents: [{ name: 'Bon de commande type', tags: ['#po'], validityDate: '2024-10-10', creator: 'Approvisionneur', validator: 'John Doe' }] },
+                            { id: 'sp8-2-2', name: 'Suivi de livraison', owner: 'Approvisionneur', rights: ['Lecteur'], documents: [{ name: 'Accusé de réception', tags: ['#livraison'], validityDate: 'N/A', creator: 'Approvisionneur', validator: 'John Doe' }] }
                         ]
                     },
                     {
                         id: 's8-3', name: 'Évaluation Fournisseurs', angle: 300, owner: 'Qualiticien Achat', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'Grille d\'évaluation', tags: ['#évaluation', '#fournisseur'] }],
+                        documents: [{ name: 'Grille d\'évaluation', tags: ['#évaluation', '#fournisseur'], validityDate: '2025-04-01', creator: 'Qualiticien Achat', validator: 'Jeff Bezos' }],
                         subProcesses: [
-                            { id: 'sp8-3-1', name: 'Audit fournisseur', owner: 'Auditeur Qualité', rights: ['Rédacteur'], documents: [{ name: 'Rapport d\'audit', tags: ['#audit']}] },
-                            { id: 'sp8-3-2', name: 'Suivi des performances', owner: 'Qualiticien Achat', rights: ['Approbateur'], documents: [{ name: 'Scorecard fournisseur', tags: ['#kpi']}] }
+                            { id: 'sp8-3-1', name: 'Audit fournisseur', owner: 'Auditeur Qualité', rights: ['Rédacteur'], documents: [{ name: 'Rapport d\'audit', tags: ['#audit'], validityDate: 'N/A', creator: 'Auditeur Qualité', validator: 'Qualiticien Achat' }] },
+                            { id: 'sp8-3-2', name: 'Suivi des performances', owner: 'Qualiticien Achat', rights: ['Approbateur'], documents: [{ name: 'Scorecard fournisseur', tags: ['#kpi'], validityDate: 'N/A', creator: 'Qualiticien Achat', validator: 'Jeff Bezos' }] }
                         ]
                     },
                     {
                         id: 's8-4', name: 'Négociation Contrats Cadres', angle: 0, owner: 'Acheteur Stratégique', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'Modèle de contrat cadre', tags: ['#contrat', '#négociation'] }],
+                        documents: [{ name: 'Modèle de contrat cadre', tags: ['#contrat', '#négociation'], validityDate: '2025-01-01', creator: 'Acheteur Stratégique', validator: 'Jeff Bezos' }],
                         subProcesses: [
-                            { id: 'sp8-4-1', name: 'Préparation de la négociation', owner: 'Acheteur Stratégique', rights: ['Rédacteur'], documents: [{ name: 'Objectifs de négociation', tags: ['#nego']}] },
-                            { id: 'sp8-4-2', name: 'Validation juridique', owner: 'Juriste', rights: ['Approbateur'], documents: [{ name: 'Validation contrat', tags: ['#juridique']}] }
+                            { id: 'sp8-4-1', name: 'Préparation de la négociation', owner: 'Acheteur Stratégique', rights: ['Rédacteur'], documents: [{ name: 'Objectifs de négociation', tags: ['#nego'], validityDate: 'N/A', creator: 'Acheteur Stratégique', validator: 'Jeff Bezos' }] },
+                            { id: 'sp8-4-2', name: 'Validation juridique', owner: 'Juriste', rights: ['Approbateur'], documents: [{ name: 'Validation contrat', tags: ['#juridique'], validityDate: 'N/A', creator: 'Juriste', validator: 'Jeff Bezos' }] }
                         ]
                     }
                 ]
@@ -519,34 +536,34 @@
                 satellites: [
                     {
                         id: 's9-1', name: 'Support Technique', angle: 45, owner: 'Thomas Leroy', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'FAQ Produit A', tags: ['#support', '#faq'] }],
+                        documents: [{ name: 'FAQ Produit A', tags: ['#support', '#faq'], validityDate: '2025-06-30', creator: 'Thomas Leroy', validator: 'Sébastien Loeb' }],
                         subProcesses: [
-                            { id: 'sp9-1-1', name: 'Qualification ticket', owner: 'Agent N1', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Arbre de décision N1', tags: ['#ticket']}] },
-                            { id: 'sp9-1-2', name: 'Escalade N2/N3', owner: 'Thomas Leroy', rights: ['Lecteur'], documents: [{ name: 'Procédure d\'escalade', tags: ['#escalade']}] }
+                            { id: 'sp9-1-1', name: 'Qualification ticket', owner: 'Agent N1', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Arbre de décision N1', tags: ['#ticket'], validityDate: '2025-01-10', creator: 'Agent N1', validator: 'Thomas Leroy' }] },
+                            { id: 'sp9-1-2', name: 'Escalade N2/N3', owner: 'Thomas Leroy', rights: ['Lecteur'], documents: [{ name: 'Procédure d\'escalade', tags: ['#escalade'], validityDate: '2025-01-10', creator: 'Thomas Leroy', validator: 'Sébastien Loeb' }] }
                         ]
                     },
                      {
                         id: 's9-2', name: 'Gestion des Réclamations', angle: 135, owner: 'Sébastien Loeb', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'Politique de retour', tags: ['#litige', '#client'] }],
+                        documents: [{ name: 'Politique de retour', tags: ['#litige', '#client'], validityDate: '2025-01-01', creator: 'Sébastien Loeb', validator: 'Julien Mercier' }],
                         subProcesses: [
-                            { id: 'sp9-2-1', name: 'Enregistrement réclamation', owner: 'Agent Support', rights: ['Rédacteur'], documents: [{ name: 'Formulaire réclamation', tags: ['#form']}] },
-                            { id: 'sp9-2-2', name: 'Analyse et résolution', owner: 'Responsable Client', rights: ['Approbateur'], documents: [{ name: 'Rapport d\'incident', tags: ['#resolution']}] }
+                            { id: 'sp9-2-1', name: 'Enregistrement réclamation', owner: 'Agent Support', rights: ['Rédacteur'], documents: [{ name: 'Formulaire réclamation', tags: ['#form'], validityDate: '2024-10-01', creator: 'Agent Support', validator: 'Sébastien Loeb' }] },
+                            { id: 'sp9-2-2', name: 'Analyse et résolution', owner: 'Responsable Client', rights: ['Approbateur'], documents: [{ name: 'Rapport d\'incident', tags: ['#resolution'], validityDate: 'N/A', creator: 'Responsable Client', validator: 'Sébastien Loeb' }] }
                         ]
                     },
                     {
                         id: 's9-3', name: 'Centre d\'aide en Ligne', angle: 225, owner: 'Rédacteur Technique', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'Base de connaissance', tags: ['#helpdesk', '#faq'] }],
+                        documents: [{ name: 'Base de connaissance', tags: ['#helpdesk', '#faq'], validityDate: 'N/A', creator: 'Rédacteur Technique', validator: 'Sébastien Loeb' }],
                         subProcesses: [
-                            { id: 'sp9-3-1', name: 'Rédaction de tutoriels', owner: 'Rédacteur Technique', rights: ['Rédacteur'], documents: [{ name: 'Liste des tutoriels', tags: ['#tuto']}] },
-                            { id: 'sp9-3-2', name: 'Mise à jour de la FAQ', owner: 'Rédacteur Technique', rights: ['Approbateur'], documents: [{ name: 'Analyse des tickets', tags: ['#faq']}] }
+                            { id: 'sp9-3-1', name: 'Rédaction de tutoriels', owner: 'Rédacteur Technique', rights: ['Rédacteur'], documents: [{ name: 'Liste des tutoriels', tags: ['#tuto'], validityDate: 'N/A', creator: 'Rédacteur Technique', validator: 'Sébastien Loeb' }] },
+                            { id: 'sp9-3-2', name: 'Mise à jour de la FAQ', owner: 'Rédacteur Technique', rights: ['Approbateur'], documents: [{ name: 'Analyse des tickets', tags: ['#faq'], validityDate: 'N/A', creator: 'Rédacteur Technique', validator: 'Sébastien Loeb' }] }
                         ]
                     },
                     {
                         id: 's9-4', name: 'Suivi de la Satisfaction', angle: 315, owner: 'Responsable Expérience Client', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'Enquêtes de satisfaction', tags: ['#csat', '#nps'] }],
+                        documents: [{ name: 'Enquêtes de satisfaction', tags: ['#csat', '#nps'], validityDate: '2025-01-01', creator: 'Responsable Expérience Client', validator: 'Sébastien Loeb' }],
                         subProcesses: [
-                            { id: 'sp9-4-1', name: 'Envoi des enquêtes', owner: 'Chargé de satisfaction', rights: ['Rédacteur'], documents: [{ name: 'Modèle d\'enquête', tags: ['#survey']}] },
-                            { id: 'sp9-4-2', name: 'Analyse des retours', owner: 'Responsable Expérience Client', rights: ['Approbateur'], documents: [{ name: 'Dashboard de satisfaction', tags: ['#dashboard']}] }
+                            { id: 'sp9-4-1', name: 'Envoi des enquêtes', owner: 'Chargé de satisfaction', rights: ['Rédacteur'], documents: [{ name: 'Modèle d\'enquête', tags: ['#survey'], validityDate: '2025-01-01', creator: 'Chargé de satisfaction', validator: 'Responsable Expérience Client' }] },
+                            { id: 'sp9-4-2', name: 'Analyse des retours', owner: 'Responsable Expérience Client', rights: ['Approbateur'], documents: [{ name: 'Dashboard de satisfaction', tags: ['#dashboard'], validityDate: 'N/A', creator: 'Responsable Expérience Client', validator: 'Sébastien Loeb' }] }
                         ]
                     }
                 ]
@@ -561,34 +578,34 @@
                 satellites: [
                     {
                         id: 's10-1', name: 'Pilotage Stratégique', angle: 45, owner: 'Julien Mercier', rights: ['Approbateur'],
-                        documents: [{ name: 'Plan stratégique 2025', tags: ['#stratégie'] }],
+                        documents: [{ name: 'Plan stratégique 2025', tags: ['#stratégie'], validityDate: '2025-12-31', creator: 'Julien Mercier', validator: 'Conseil d\'Administration' }],
                         subProcesses: [
-                            { id: 's10-1-1', name: 'Analyse SWOT', owner: 'Analyste Stratégique', rights: ['Lecteur', 'Approbateur'], documents: [{ name: 'Matrice SWOT', tags: ['#swot']}] },
-                            { id: 's10-1-2', name: 'Définition des OKR', owner: 'Julien Mercier', rights: ['Approbateur'], documents: [{ name: 'Objectifs et Résultats Clés', tags: ['#okr']}] }
+                            { id: 'sp10-1-1', name: 'Analyse SWOT', owner: 'Analyste Stratégique', rights: ['Lecteur', 'Approbateur'], documents: [{ name: 'Matrice SWOT', tags: ['#swot'], validityDate: 'N/A', creator: 'Analyste Stratégique', validator: 'Julien Mercier' }] },
+                            { id: 'sp10-1-2', name: 'Définition des OKR', owner: 'Julien Mercier', rights: ['Approbateur'], documents: [{ name: 'Objectifs et Résultats Clés', tags: ['#okr'], validityDate: '2025-01-01', creator: 'Julien Mercier', validator: 'Conseil d\'Administration' }] }
                         ]
                     },
                     {
                         id: 's10-2', name: 'Relations Investisseurs', angle: 135, owner: 'Directeur Financier', rights: ['Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'Rapport annuel', tags: ['#finance', '#communication'] }],
+                        documents: [{ name: 'Rapport annuel', tags: ['#finance', '#communication'], validityDate: 'N/A', creator: 'Directeur Financier', validator: 'Julien Mercier' }],
                         subProcesses: [
-                            { id: 's10-2-1', name: 'Préparation des rapports', owner: 'Contrôleur de Gestion', rights: ['Rédacteur'], documents: [{ name: 'Reporting financier', tags: ['#reporting']}] },
-                            { id: 's10-2-2', name: 'Assemblée Générale', owner: 'Julien Mercier', rights: ['Approbateur'], documents: [{ name: 'Présentation AG', tags: ['#AG']}] }
+                            { id: 'sp10-2-1', name: 'Préparation des rapports', owner: 'Contrôleur de Gestion', rights: ['Rédacteur'], documents: [{ name: 'Reporting financier', tags: ['#reporting'], validityDate: 'N/A', creator: 'Contrôleur de Gestion', validator: 'Directeur Financier' }] },
+                            { id: 'sp10-2-2', name: 'Assemblée Générale', owner: 'Julien Mercier', rights: ['Approbateur'], documents: [{ name: 'Présentation AG', tags: ['#AG'], validityDate: 'N/A', creator: 'Directeur Financier', validator: 'Julien Mercier' }] }
                         ]
                     },
                     {
                         id: 's10-3', name: 'Communication Corporate', angle: 225, owner: 'Directeur de la Communication', rights: ['Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'Plan de communication', tags: ['#comms', '#presse'] }],
+                        documents: [{ name: 'Plan de communication', tags: ['#comms', '#presse'], validityDate: '2025-01-01', creator: 'Directeur de la Communication', validator: 'Julien Mercier' }],
                         subProcesses: [
-                            { id: 'sp10-3-1', name: 'Relations presse', owner: 'Attaché de presse', rights: ['Rédacteur'], documents: [{ name: 'Communiqué de presse', tags: ['#presse']}] },
-                            { id: 'sp10-3-2', name: 'Communication de crise', owner: 'Directeur de la Communication', rights: ['Approbateur'], documents: [{ name: 'Cellule de crise', tags: ['#crise']}] }
+                            { id: 'sp10-3-1', name: 'Relations presse', owner: 'Attaché de presse', rights: ['Rédacteur'], documents: [{ name: 'Communiqué de presse', tags: ['#presse'], validityDate: 'N/A', creator: 'Attaché de presse', validator: 'Directeur de la Communication' }] },
+                            { id: 'sp10-3-2', name: 'Communication de crise', owner: 'Directeur de la Communication', rights: ['Approbateur'], documents: [{ name: 'Cellule de crise', tags: ['#crise'], validityDate: '2024-09-01', creator: 'Directeur de la Communication', validator: 'Julien Mercier' }] }
                         ]
                     },
                     {
                         id: 's10-4', name: 'Fusions & Acquisitions', angle: 315, owner: 'Responsable M&A', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
-                        documents: [{ name: 'Cible d\'acquisition', tags: ['#m&a', '#croissance'] }],
+                        documents: [{ name: 'Cible d\'acquisition', tags: ['#m&a', '#croissance'], validityDate: 'N/A', creator: 'Responsable M&A', validator: 'Julien Mercier' }],
                         subProcesses: [
-                            { id: 'sp10-4-1', name: 'Due diligence', owner: 'Analyste M&A', rights: ['Rédacteur'], documents: [{ name: 'Rapport de due diligence', tags: ['#duediligence']}] },
-                            { id: 'sp10-4-2', name: 'Intégration post-acquisition', owner: 'Chef de projet Intégration', rights: ['Approbateur'], documents: [{ name: 'Plan d\'intégration', tags: ['#pmi']}] }
+                            { id: 'sp10-4-1', name: 'Due diligence', owner: 'Analyste M&A', rights: ['Rédacteur'], documents: [{ name: 'Rapport de due diligence', tags: ['#duediligence'], validityDate: 'N/A', creator: 'Analyste M&A', validator: 'Responsable M&A' }] },
+                            { id: 'sp10-4-2', name: 'Intégration post-acquisition', owner: 'Chef de projet Intégration', rights: ['Approbateur'], documents: [{ name: 'Plan d\'intégration', tags: ['#pmi'], validityDate: 'N/A', creator: 'Chef de projet Intégration', validator: 'Julien Mercier' }] }
                         ]
                     }
                 ]
@@ -637,11 +654,6 @@
                 label.textContent = planetData.name;
                 planetEl.appendChild(label);
 
-                // Création des KPIs
-                const kpiContainer = document.createElement('div');
-                kpiContainer.className = 'kpi-container absolute -top-20 w-48 text-center text-xs text-gray-300 bg-black/30 p-2 rounded';
-                kpiContainer.innerHTML = planetData.kpis.map(kpi => `<div><strong>${kpi.name}:</strong> ${kpi.value}</div>`).join('');
-                planetEl.appendChild(kpiContainer);
 
                 // Création des satellites
                 planetData.satellites.forEach(satData => {
@@ -757,12 +769,18 @@
                     <div>
                         <h3 class="font-semibold mb-2 text-gray-200">Indicateurs Clés (KPIs)</h3>
                         <ul class="space-y-2">
-                            ${planetData.kpis.map(kpi => `
-                                <li class="bg-gray-800 p-3 rounded-lg flex justify-between items-center">
-                                    <span class="font-medium text-gray-100">${kpi.name}</span>
-                                    <span class="font-bold text-xl text-cyan-400">${kpi.value}</span>
-                                </li>
-                            `).join('')}
+                            ${planetData.kpis.map(kpi => {
+                                const color = Math.random() > 0.5 ? 'bg-green-500' : 'bg-red-500';
+                                return `
+                                    <li class="bg-gray-800 p-3 rounded-lg flex justify-between items-center">
+                                        <div class="flex items-center">
+                                            <span class="kpi-indicator ${color} mr-3"></span>
+                                            <span class="font-medium text-gray-100">${kpi.name}</span>
+                                        </div>
+                                        <span class="font-bold text-xl text-cyan-400">${kpi.value}</span>
+                                    </li>
+                                `;
+                            }).join('')}
                         </ul>
                     </div>
                 `;
@@ -796,11 +814,16 @@
                     <div>
                         <h3 class="font-semibold mb-2 text-gray-200">Documents associés</h3>
                         <ul class="space-y-3">
-                            ${subProcessData.documents.map(doc => `
-                                <li class="bg-gray-800 p-3 rounded-lg">
+                            ${(subProcessData.documents || []).map(doc => `
+                                <li class="document-item bg-gray-800 p-3 rounded-lg" onclick="this.classList.toggle('expanded')">
                                     <p class="font-medium text-gray-100">${doc.name}</p>
                                     <div class="flex flex-wrap gap-2 mt-2">
-                                        ${doc.tags.map(tag => `<span class="text-xs bg-gray-700 text-yellow-400 px-2 py-1 rounded">${tag}</span>`).join('')}
+                                        ${(doc.tags || []).map(tag => `<span class="text-xs bg-gray-700 text-yellow-400 px-2 py-1 rounded">${tag}</span>`).join('')}
+                                    </div>
+                                    <div class="document-details space-y-1">
+                                        <p><strong>Créateur:</strong> ${doc.creator}</p>
+                                        <p><strong>Valideur:</strong> ${doc.validator}</p>
+                                        <p><strong>Date de validité:</strong> ${doc.validityDate}</p>
                                     </div>
                                 </li>
                             `).join('')}
@@ -836,11 +859,16 @@
                     <div>
                         <h3 class="font-semibold mb-2 text-gray-200">Documents associés</h3>
                         <ul class="space-y-3">
-                            ${satData.documents.map(doc => `
-                                <li class="bg-gray-800 p-3 rounded-lg">
+                            ${(satData.documents || []).map(doc => `
+                                <li class="document-item bg-gray-800 p-3 rounded-lg" onclick="this.classList.toggle('expanded')">
                                     <p class="font-medium text-gray-100">${doc.name}</p>
                                     <div class="flex flex-wrap gap-2 mt-2">
-                                        ${doc.tags.map(tag => `<span class="text-xs bg-gray-700 text-cyan-300 px-2 py-1 rounded">${tag}</span>`).join('')}
+                                        ${(doc.tags || []).map(tag => `<span class="text-xs bg-gray-700 text-cyan-300 px-2 py-1 rounded">${tag}</span>`).join('')}
+                                    </div>
+                                    <div class="document-details space-y-1">
+                                        <p><strong>Créateur:</strong> ${doc.creator}</p>
+                                        <p><strong>Valideur:</strong> ${doc.validator}</p>
+                                        <p><strong>Date de validité:</strong> ${doc.validityDate}</p>
                                     </div>
                                 </li>
                             `).join('')}
