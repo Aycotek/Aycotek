@@ -173,135 +173,253 @@
             // Orbite 1
             {
                 id: 'p1', name: 'RH & Administration', size: 60, color: 'bg-blue-500', distance: 150, angle: 45,
+                macroOwner: 'David Rousseau',
+                description: 'Gérer le capital humain et assurer le bon fonctionnement administratif de l\'entreprise.',
                 kpis: [{ name: 'Satisfaction employé', value: '92%' }, { name: 'Temps de recrutement', value: '28j' }, { name: 'Turnover', value: '8%' }],
-                satellites: [{
-                    id: 's1-1', name: 'Recrutement', angle: 0, owner: 'Alice Martin', rights: ['Lecteur', 'Rédacteur'],
-                    documents: [{ name: 'Procédure de sélection', tags: ['#rh', '#entretien'] }],
-                    subProcesses: [
-                        { id: 'sp1-1-1', name: 'Définition du besoin', owner: 'Manager RH', rights: ['Rédacteur'], documents: [{ name: 'Fiche de poste type', tags: ['#besoin', '#rh']}] },
-                        { id: 'sp1-1-2', name: 'Sourcing candidats', owner: 'Chargé de recrutement', rights: ['Lecteur'], documents: [{ name: 'Guide des plateformes', tags: ['#sourcing']}] },
-                        { id: 'sp1-1-3', name: 'Entretiens & Sélection', owner: 'Alice Martin', rights: ['Lecteur', 'Rédacteur'], documents: [{ name: 'Grille d\'évaluation', tags: ['#entretien']}] },
-                        { id: 'sp1-1-4', name: 'Offre & Intégration', owner: 'Manager RH', rights: ['Approbateur'], documents: [{ name: 'Modèle de promesse d\'embauche', tags: ['#offre']}] }
-                    ]
-                }]
+                satellites: [
+                    {
+                        id: 's1-1', name: 'Recrutement', angle: 20, owner: 'Alice Martin', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
+                        documents: [{ name: 'Procédure de sélection', tags: ['#rh', '#entretien'] }],
+                        subProcesses: [
+                            { id: 'sp1-1-1', name: 'Définition du besoin', owner: 'Manager RH', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Fiche de poste type', tags: ['#besoin', '#rh']}] },
+                            { id: 'sp1-1-2', name: 'Sourcing candidats', owner: 'Chargé de recrutement', rights: ['Lecteur'], documents: [{ name: 'Guide des plateformes', tags: ['#sourcing']}] }
+                        ]
+                    },
+                    {
+                        id: 's1-2', name: 'Gestion de la Paie', angle: 140, owner: 'Pauline Lefevre', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
+                        documents: [{ name: 'Calendrier de paie', tags: ['#paie', '#finance'] }],
+                        subProcesses: [
+                            { id: 'sp1-2-1', name: 'Collecte des variables', owner: 'Gestionnaire Paie', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Fichier des primes', tags: ['#primes']}] },
+                            { id: 'sp1-2-2', name: 'Validation et virement', owner: 'Pauline Lefevre', rights: ['Approbateur'], documents: [{ name: 'Ordre de virement', tags: ['#virement']}] }
+                        ]
+                    },
+                    {
+                        id: 's1-3', name: 'Formation', angle: 260, owner: 'Kevin Durant', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
+                        documents: [{ name: 'Catalogue de formations', tags: ['#formation', '#compétences'] }],
+                        subProcesses: [
+                            { id: 'sp1-3-1', name: 'Recueil des besoins', owner: 'Manager RH', rights: ['Lecteur', 'Approbateur'], documents: [{ name: 'Sondage besoins formation', tags: ['#sondage']}] },
+                            { id: 'sp1-3-2', name: 'Organisation sessions', owner: 'Assistant RH', rights: ['Rédacteur'], documents: [{ name: 'Planning des formations', tags: ['#planning']}] }
+                        ]
+                    }
+                ]
             },
             {
                 id: 'p4', name: 'Finance & Comptabilité', size: 55, color: 'bg-green-600', distance: 150, angle: 225,
+                macroOwner: 'Laura Klein',
+                description: 'Assurer la santé financière, la conformité comptable et le reporting de l\'entreprise.',
                 kpis: [{ name: 'Marge brute', value: '60%' }, { name: 'DSO', value: '45j' }, { name: 'Respect budget', value: '98%' }],
-                satellites: [{
-                    id: 's4-1', name: 'Facturation', angle: 180, owner: 'Claire Durand', rights: ['Lecteur', 'Approbateur'],
-                    documents: [{ name: 'MO: Emission facture', tags: ['#finance', '#client'] }],
-                    subProcesses: [
-                        { id: 'sp4-1-1', name: 'Création facture client', owner: 'Comptable', rights: ['Rédacteur'], documents: [{ name: 'Template facture', tags: ['#facture']}] },
-                        { id: 'sp4-1-2', name: 'Envoi et suivi', owner: 'Chargé de recouvrement', rights: ['Lecteur'], documents: [{ name: 'Procédure de relance', tags: ['#suivi']}] },
-                        { id: 'sp4-1-3', name: 'Lettrage paiement', owner: 'Comptable', rights: ['Rédacteur'], documents: [{ name: 'Accès relevés bancaires', tags: ['#paiement']}] }
-                    ]
-                }]
+                satellites: [
+                    {
+                        id: 's4-1', name: 'Facturation Client', angle: 180, owner: 'Claire Durand', rights: ['Lecteur', 'Approbateur'],
+                        documents: [{ name: 'MO: Emission facture', tags: ['#finance', '#client'] }],
+                        subProcesses: [
+                            { id: 'sp4-1-1', name: 'Création facture', owner: 'Comptable', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Template facture', tags: ['#facture']}] },
+                            { id: 'sp4-1-2', name: 'Envoi et suivi', owner: 'Chargé de recouvrement', rights: ['Lecteur'], documents: [{ name: 'Procédure de relance', tags: ['#suivi']}] }
+                        ]
+                    },
+                    {
+                        id: 's4-2', name: 'Comptabilité Fournisseur', angle: 0, owner: 'Lucas Boyer', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
+                        documents: [{ name: 'Procédure de paiement', tags: ['#fournisseur', '#paiement'] }],
+                        subProcesses: [
+                            { id: 'sp4-2-1', name: 'Réception et validation', owner: 'Comptable Fournisseur', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Bon de commande', tags: ['#validation']}] },
+                            { id: 'sp4-2-2', name: 'Mise en paiement', owner: 'Trésorier', rights: ['Approbateur'], documents: [{ name: 'Plan de trésorerie', tags: ['#cash']}] }
+                        ]
+                    }
+                ]
             },
             // Orbite 2
             {
                 id: 'p2', name: 'Ventes & Marketing', size: 70, color: 'bg-red-600', distance: 250, angle: 120,
+                macroOwner: 'Stéphane Plaza',
+                description: 'Développer la notoriété de la marque, générer des opportunités commerciales et conclure des ventes.',
                 kpis: [{ name: 'Taux de conversion', value: '4.5%' }, { name: 'CAC', value: '150€' }, { name: 'Leads / mois', value: '1,200' }],
-                satellites: [{
-                    id: 's2-1', name: 'Génération de leads', angle: 30, owner: 'Carole Dubois', rights: ['Rédacteur'],
-                    documents: [{ name: 'Guide de campagne pub', tags: ['#marketing', '#ads'] }],
-                    subProcesses: [
-                        { id: 'sp2-1-1', name: 'Campagne emailing', owner: 'Marketing Ops', rights: ['Rédacteur'], documents: [{ name: 'Liste de diffusion', tags: ['#emailing']}] },
-                        { id: 'sp2-1-2', name: 'Publicité en ligne', owner: 'Spécialiste SEA', rights: ['Lecteur', 'Rédacteur'], documents: [{ name: 'Rapport de performance Ads', tags: ['#ads']}] },
-                        { id: 'sp2-1-3', name: 'Gestion réseaux sociaux', owner: 'Community Manager', rights: ['Rédacteur'], documents: [{ name: 'Calendrier éditorial', tags: ['#social']}] }
-                    ]
-                }]
+                satellites: [
+                    {
+                        id: 's2-1', name: 'Génération de Leads', angle: 30, owner: 'Carole Dubois', rights: ['Rédacteur', 'Approbateur'],
+                        documents: [{ name: 'Guide de campagne pub', tags: ['#marketing', '#ads'] }],
+                        subProcesses: [
+                            { id: 'sp2-1-1', name: 'Campagne emailing', owner: 'Marketing Ops', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Liste de diffusion', tags: ['#emailing']}] },
+                            { id: 'sp2-1-2', name: 'Publicité en ligne', owner: 'Spécialiste SEA', rights: ['Lecteur', 'Rédacteur'], documents: [{ name: 'Rapport de performance Ads', tags: ['#ads']}] },
+                        ]
+                    },
+                    {
+                        id: 's2-2', name: 'Closing', angle: 150, owner: 'Jean-Claude Convenant', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
+                        documents: [{ name: 'Argumentaire de vente', tags: ['#vente', '#closing'] }],
+                        subProcesses: [
+                            { id: 'sp2-2-1', name: 'Qualification prospect', owner: 'Commercial', rights: ['Rédacteur'], documents: [{ name: 'Script de qualification', tags: ['#prospect']}] },
+                            { id: 'sp2-2-2', name: 'Négociation', owner: 'Directeur Commercial', rights: ['Approbateur'], documents: [{ name: 'Grille tarifaire', tags: ['#negociation']}] },
+                        ]
+                    }
+                ]
             },
             {
-                id: 'p5', name: 'Systèmes d\'Information', size: 65, color: 'bg-indigo-500', distance: 250, angle: 0,
+                id: 'p5', name: 'Systèmes d\'Information', size: 65, color: 'bg-indigo-500', distance: 250, angle: 330,
+                macroOwner: 'Elon Musk',
+                description: 'Garantir la disponibilité, la performance et la sécurité de l\'infrastructure et des applications.',
                 kpis: [{ name: 'Uptime des services', value: '99.98%' }, { name: 'Tickets résolus', value: '95%' }, { name: 'Sécurité', value: 'A+' }],
-                satellites: [{
-                    id: 's5-1', name: 'Maintenance Infra', angle: 90, owner: 'Marc Petit', rights: ['Lecteur', 'Rédacteur'],
-                    documents: [{ name: 'Procédure de backup', tags: ['#it', '#sécurité'] }],
-                    subProcesses: [
-                        { id: 'sp5-1-1', name: 'Sauvegardes quotidiennes', owner: 'Admin Sys', rights: ['Rédacteur'], documents: [{ name: 'Log des sauvegardes', tags: ['#backup']}] },
-                        { id: 'sp5-1-2', name: 'Mise à jour sécurité', owner: 'Ingénieur Sécurité', rights: ['Approbateur'], documents: [{ name: 'Rapport de vulnérabilité', tags: ['#patch']}] },
-                        { id: 'sp5-1-3', name: 'Monitoring performance', owner: 'Admin Sys', rights: ['Lecteur'], documents: [{ name: 'Dashboard de supervision', tags: ['#monitoring']}] }
-                    ]
-                }]
+                satellites: [
+                    {
+                        id: 's5-1', name: 'Maintenance Infra', angle: 90, owner: 'Marc Petit', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
+                        documents: [{ name: 'Procédure de backup', tags: ['#it', '#sécurité'] }],
+                        subProcesses: [
+                            { id: 'sp5-1-1', name: 'Sauvegardes quotidiennes', owner: 'Admin Sys', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Log des sauvegardes', tags: ['#backup']}] },
+                            { id: 'sp5-1-2', name: 'Mise à jour sécurité', owner: 'Ingénieur Sécurité', rights: ['Approbateur'], documents: [{ name: 'Rapport de vulnérabilité', tags: ['#patch']}] },
+                        ]
+                    },
+                     {
+                        id: 's5-2', name: 'Support Utilisateur', angle: 270, owner: 'Jennifer Aniston', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
+                        documents: [{ name: 'Base de connaissance', tags: ['#support', '#faq'] }],
+                        subProcesses: [
+                            { id: 'sp5-2-1', name: 'Hotline N1', owner: 'Technicien Support', rights: ['Rédacteur'], documents: [{ name: 'Catalogue de solutions', tags: ['#n1']}] },
+                            { id: 'sp5-2-2', name: 'Gestion des tickets', owner: 'Jennifer Aniston', rights: ['Approbateur'], documents: [{ name: 'SLA de résolution', tags: ['#tickets']}] },
+                        ]
+                    }
+                ]
             },
             {
-                id: 'p7', name: 'Qualité & Conformité', size: 60, color: 'bg-teal-500', distance: 250, angle: 270,
+                id: 'p7', name: 'Qualité & Conformité', size: 60, color: 'bg-teal-500', distance: 250, angle: 210,
+                macroOwner: 'Angela Merkel',
+                description: 'Assurer que les processus et produits respectent les normes et standards de qualité internes et externes.',
                 kpis: [{ name: 'Non-conformités', value: '12' }, { name: 'Taux de certification', value: '100%' }, { name: 'Audits réussis', value: '10/10' }],
-                satellites: [{
-                    id: 's7-1', name: 'Audit Interne', angle: 0, owner: 'Sophie Lambert', rights: ['Approbateur'],
-                    documents: [{ name: 'Plan d\'audit annuel', tags: ['#qualité', '#iso9001'] }],
-                    subProcesses: [
-                        { id: 'sp7-1-1', name: 'Planification de l\'audit', owner: 'Sophie Lambert', rights: ['Rédacteur'], documents: [{ name: 'Checklist d\'audit', tags: ['#planning']}] },
-                        { id: 'sp7-1-2', name: 'Réalisation des entretiens', owner: 'Auditeur Qualité', rights: ['Lecteur'], documents: [{ name: 'Comptes-rendus d\'entretien', tags: ['#entretien']}] },
-                        { id: 'sp7-1-3', name: 'Rédaction du rapport', owner: 'Sophie Lambert', rights: ['Approbateur'], documents: [{ name: 'Modèle de rapport d\'audit', tags: ['#rapport']}] }
-                    ]
-                }]
+                satellites: [
+                    {
+                        id: 's7-1', name: 'Audit Interne', angle: 0, owner: 'Sophie Lambert', rights: ['Rédacteur', 'Approbateur'],
+                        documents: [{ name: 'Plan d\'audit annuel', tags: ['#qualité', '#iso9001'] }],
+                        subProcesses: [
+                            { id: 'sp7-1-1', name: 'Planification de l\'audit', owner: 'Sophie Lambert', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Checklist d\'audit', tags: ['#planning']}] },
+                            { id: 'sp7-1-2', name: 'Rédaction du rapport', owner: 'Sophie Lambert', rights: ['Approbateur'], documents: [{ name: 'Modèle de rapport', tags: ['#rapport']}] }
+                        ]
+                    },
+                    {
+                        id: 's7-2', name: 'Gestion Documentaire', angle: 180, owner: 'Juste Leblanc', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
+                        documents: [{ name: 'Arborescence documentaire', tags: ['#ged', '#processus'] }],
+                        subProcesses: [
+                            { id: 'sp7-2-1', name: 'Approbation des documents', owner: 'Juste Leblanc', rights: ['Approbateur'], documents: [{ name: 'Workflow de validation', tags: ['#workflow']}] },
+                            { id: 'sp7-2-2', name: 'Archivage', owner: 'Archiviste', rights: ['Rédacteur'], documents: [{ name: 'Politique d\'archivage', tags: ['#archivage']}] }
+                        ]
+                    }
+                ]
             },
             // Orbite 3
             {
                 id: 'p3', name: 'Production & Logistique', size: 80, color: 'bg-orange-500', distance: 380, angle: 210,
+                macroOwner: 'Mary Barra',
+                description: 'Transformer les matières premières en produits finis et les acheminer jusqu\'au client final.',
                 kpis: [{ name: 'Efficacité production', value: '85%' }, { name: 'Délai livraison', value: '3.2j' }, { name: 'Taux de défauts', value: '0.8%' }],
-                satellites: [{
-                    id: 's3-1', name: 'Planification', angle: 0, owner: 'Eva Moreau', rights: ['Lecteur', 'Rédacteur'],
-                    documents: [{ name: 'MO: Lancement production', tags: ['#planning'] }],
-                    subProcesses: [
-                        { id: 'sp3-1-1', name: 'Prévision de la demande', owner: 'Supply Chain Planner', rights: ['Lecteur'], documents: [{ name: 'Historique des ventes', tags: ['#forecast']}] },
-                        { id: 'sp3-1-2', name: 'Ordonnancement', owner: 'Planificateur de production', rights: ['Rédacteur'], documents: [{ name: 'Planning de production', tags: ['#schedule']}] },
-                        { id: 'sp3-1-3', name: 'Gestion des stocks MP', owner: 'Gestionnaire de stock', rights: ['Lecteur', 'Rédacteur'], documents: [{ name: 'Niveaux de stock', tags: ['#stock']}] }
-                    ]
-                }]
+                satellites: [
+                    {
+                        id: 's3-1', name: 'Planification', angle: 0, owner: 'Eva Moreau', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
+                        documents: [{ name: 'MO: Lancement production', tags: ['#planning'] }],
+                        subProcesses: [
+                            { id: 'sp3-1-1', name: 'Prévision de la demande', owner: 'Supply Chain Planner', rights: ['Lecteur', 'Approbateur'], documents: [{ name: 'Historique des ventes', tags: ['#forecast']}] },
+                            { id: 'sp3-1-2', name: 'Ordonnancement', owner: 'Planificateur', rights: ['Rédacteur'], documents: [{ name: 'Planning de production', tags: ['#schedule']}] }
+                        ]
+                    },
+                    {
+                        id: 's3-2', name: 'Expédition', angle: 180, owner: 'Didier Deschamps', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
+                        documents: [{ name: 'Procédure d\'emballage', tags: ['#logistique', '#transport'] }],
+                        subProcesses: [
+                            { id: 'sp3-2-1', name: 'Préparation de commande', owner: 'Préparateur de commande', rights: ['Rédacteur'], documents: [{ name: 'Bon de préparation', tags: ['#picking']}] },
+                            { id: 'sp3-2-2', name: 'Gestion des transporteurs', owner: 'Didier Deschamps', rights: ['Approbateur'], documents: [{ name: 'Contrats transporteurs', tags: ['#transport']}] }
+                        ]
+                    }
+                ]
             },
             {
                 id: 'p6', name: 'R&D', size: 75, color: 'bg-purple-600', distance: 380, angle: 330,
+                macroOwner: 'Gitanjali Rao',
+                description: 'Concevoir et développer les produits et services de demain pour assurer la croissance future.',
                 kpis: [{ name: 'Projets livrés', value: '5' }, { name: 'Budget R&D', value: '1.2M€' }, { name: 'Brevets déposés', value: '2' }],
-                satellites: [{
-                    id: 's6-1', name: 'Veille Technologique', angle: 270, owner: 'Luc Bernard', rights: ['Lecteur'],
-                    documents: [{ name: 'Rapport de veille mensuel', tags: ['#innovation'] }],
-                    subProcesses: [
-                        { id: 'sp6-1-1', name: 'Analyse concurrentielle', owner: 'Analyste', rights: ['Lecteur'], documents: [{ name: 'Benchmark concurrents', tags: ['#veille']}] },
-                        { id: 'sp6-1-2', name: 'Recherche de publications', owner: 'Chercheur', rights: ['Lecteur'], documents: [{ name: 'Synthèse articles scientifiques', tags: ['#recherche']}] }
-                    ]
-                }]
+                satellites: [
+                    {
+                        id: 's6-1', name: 'Veille Technologique', angle: 270, owner: 'Luc Bernard', rights: ['Lecteur', 'Approbateur'],
+                        documents: [{ name: 'Rapport de veille mensuel', tags: ['#innovation'] }],
+                        subProcesses: [
+                            { id: 'sp6-1-1', name: 'Analyse concurrentielle', owner: 'Analyste', rights: ['Lecteur', 'Approbateur'], documents: [{ name: 'Benchmark concurrents', tags: ['#veille']}] },
+                            { id: 'sp6-1-2', name: 'Recherche de publications', owner: 'Chercheur', rights: ['Lecteur'], documents: [{ name: 'Synthèse articles', tags: ['#recherche']}] }
+                        ]
+                    },
+                    {
+                        id: 's6-2', name: 'Développement Produit', angle: 90, owner: 'Marie Curie', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
+                        documents: [{ name: 'Spécifications fonctionnelles', tags: ['#dev', '#produit'] }],
+                        subProcesses: [
+                            { id: 'sp6-2-1', name: 'Prototypage', owner: 'Ingénieur Produit', rights: ['Rédacteur'], documents: [{ name: 'Maquette V1', tags: ['#prototype']}] },
+                            { id: 'sp6-2-2', name: 'Tests et validation', owner: 'QA Tester', rights: ['Lecteur', 'Approbateur'], documents: [{ name: 'Rapport de tests', tags: ['#tests']}] }
+                        ]
+                    }
+                ]
             },
             {
                 id: 'p8', name: 'Achats & Approvisionnement', size: 70, color: 'bg-yellow-500', distance: 380, angle: 150,
+                macroOwner: 'Jeff Bezos',
+                description: 'Acquérir les biens et services nécessaires au meilleur coût, qualité et délai.',
                 kpis: [{ name: 'Économies réalisées', value: '12%' }, { name: 'Taux de service fournisseur', value: '98%' }, { name: 'Délai paiement', value: '35j' }],
-                satellites: [{
-                    id: 's8-1', name: 'Sourcing Fournisseurs', angle: 120, owner: 'Hélène Fournier', rights: ['Rédacteur'],
-                    documents: [{ name: 'Procédure de sélection', tags: ['#achats'] }],
-                    subProcesses: [
-                        { id: 's8-1-1', name: 'Identification fournisseurs', owner: 'Acheteur', rights: ['Lecteur'], documents: [{ name: 'Liste de fournisseurs potentiels', tags: ['#sourcing']}] },
-                        { id: 's8-1-2', name: 'Appel d\'offres', owner: 'Hélène Fournier', rights: ['Rédacteur'], documents: [{ name: 'Dossier d\'appel d\'offres', tags: ['#tender']}] },
-                        { id: 's8-1-3', name: 'Négociation & Contrat', owner: 'Acheteur Senior', rights: ['Approbateur'], documents: [{ name: 'Contrat cadre', tags: ['#contrat']}] }
-                    ]
-                }]
+                satellites: [
+                    {
+                        id: 's8-1', name: 'Sourcing Fournisseurs', angle: 120, owner: 'Hélène Fournier', rights: ['Rédacteur', 'Approbateur'],
+                        documents: [{ name: 'Procédure de sélection', tags: ['#achats'] }],
+                        subProcesses: [
+                            { id: 's8-1-1', name: 'Identification fournisseurs', owner: 'Acheteur', rights: ['Lecteur', 'Approbateur'], documents: [{ name: 'Liste de fournisseurs', tags: ['#sourcing']}] },
+                            { id: 's8-1-2', name: 'Appel d\'offres', owner: 'Hélène Fournier', rights: ['Rédacteur'], documents: [{ name: 'Dossier d\'appel d\'offres', tags: ['#tender']}] }
+                        ]
+                    },
+                    {
+                        id: 's8-2', name: 'Gestion des Commandes', angle: 0, owner: 'John Doe', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
+                        documents: [{ name: 'Politique d\'achat', tags: ['#commande'] }],
+                        subProcesses: [
+                            { id: 's8-2-1', name: 'Passation de commande', owner: 'Approvisionneur', rights: ['Rédacteur'], documents: [{ name: 'Bon de commande type', tags: ['#po']}] },
+                            { id: 's8-2-2', name: 'Suivi de livraison', owner: 'Approvisionneur', rights: ['Lecteur'], documents: [{ name: 'Accusé de réception', tags: ['#livraison']}] }
+                        ]
+                    }
+                ]
             },
             {
                 id: 'p9', name: 'Service Client', size: 65, color: 'bg-pink-500', distance: 380, angle: 30,
+                macroOwner: 'Sébastien Loeb',
+                description: 'Assurer la satisfaction et la fidélisation des clients en répondant à leurs demandes.',
                 kpis: [{ name: 'Satisfaction client', value: '95%' }, { name: 'Temps de réponse moyen', value: '2h' }, { name: 'Taux de résolution', value: '88%' }],
-                satellites: [{
-                    id: 's9-1', name: 'Support Technique', angle: 0, owner: 'Thomas Leroy', rights: ['Lecteur', 'Rédacteur'],
-                    documents: [{ name: 'FAQ Produit A', tags: ['#support', '#faq'] }],
-                    subProcesses: [
-                        { id: 's9-1-1', name: 'Qualification ticket', owner: 'Agent N1', rights: ['Rédacteur'], documents: [{ name: 'Arbre de décision N1', tags: ['#ticket']}] },
-                        { id: 's9-1-2', name: 'Escalade N2/N3', owner: 'Thomas Leroy', rights: ['Lecteur'], documents: [{ name: 'Procédure d\'escalade', tags: ['#escalade']}] },
-                        { id: 's9-1-3', name: 'Suivi satisfaction', owner: 'Responsable Support', rights: ['Lecteur'], documents: [{ name: 'Enquête de satisfaction', tags: ['#csat']}] }
-                    ]
-                }]
+                satellites: [
+                    {
+                        id: 's9-1', name: 'Support Technique', angle: 0, owner: 'Thomas Leroy', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
+                        documents: [{ name: 'FAQ Produit A', tags: ['#support', '#faq'] }],
+                        subProcesses: [
+                            { id: 's9-1-1', name: 'Qualification ticket', owner: 'Agent N1', rights: ['Rédacteur', 'Approbateur'], documents: [{ name: 'Arbre de décision N1', tags: ['#ticket']}] },
+                            { id: 's9-1-2', name: 'Escalade N2/N3', owner: 'Thomas Leroy', rights: ['Lecteur'], documents: [{ name: 'Procédure d\'escalade', tags: ['#escalade']}] }
+                        ]
+                    },
+                     {
+                        id: 's9-2', name: 'Gestion des Réclamations', angle: 180, owner: 'Sébastien Loeb', rights: ['Lecteur', 'Rédacteur', 'Approbateur'],
+                        documents: [{ name: 'Politique de retour', tags: ['#litige', '#client'] }],
+                        subProcesses: [
+                            { id: 's9-2-1', name: 'Enregistrement réclamation', owner: 'Agent Support', rights: ['Rédacteur'], documents: [{ name: 'Formulaire réclamation', tags: ['#form']}] },
+                            { id: 's9-2-2', name: 'Analyse et résolution', owner: 'Responsable Client', rights: ['Approbateur'], documents: [{ name: 'Rapport d\'incident', tags: ['#resolution']}] }
+                        ]
+                    }
+                ]
             },
             {
                 id: 'p10', name: 'Direction Générale', size: 70, color: 'bg-gray-400', distance: 380, angle: 90,
+                macroOwner: 'Julien Mercier',
+                description: 'Définir la vision, piloter la stratégie globale et assurer la performance de l\'entreprise.',
                 kpis: [{ name: 'Croissance CA', value: '+15%' }, { name: 'EBITDA', value: '2.5M€' }, { name: 'Part de marché', value: '22%' }],
-                satellites: [{
-                    id: 's10-1', name: 'Stratégie', angle: 180, owner: 'Julien Mercier', rights: ['Approbateur'],
-                    documents: [{ name: 'Plan stratégique 2025', tags: ['#stratégie'] }],
-                    subProcesses: [
-                        { id: 's10-1-1', name: 'Analyse SWOT', owner: 'Analyste Stratégique', rights: ['Lecteur'], documents: [{ name: 'Matrice SWOT', tags: ['#swot']}] },
-                        { id: 's10-1-2', name: 'Définition des OKR', owner: 'Julien Mercier', rights: ['Approbateur'], documents: [{ name: 'Objectifs et Résultats Clés', tags: ['#okr']}] },
-                        { id: 's10-1-3', name: 'Communication interne', owner: 'Responsable Comms', rights: ['Rédacteur'], documents: [{ name: 'Plan de communication', tags: ['#communication']}] }
-                    ]
-                }]
+                satellites: [
+                    {
+                        id: 's10-1', name: 'Pilotage Stratégique', angle: 180, owner: 'Julien Mercier', rights: ['Approbateur'],
+                        documents: [{ name: 'Plan stratégique 2025', tags: ['#stratégie'] }],
+                        subProcesses: [
+                            { id: 's10-1-1', name: 'Analyse SWOT', owner: 'Analyste Stratégique', rights: ['Lecteur', 'Approbateur'], documents: [{ name: 'Matrice SWOT', tags: ['#swot']}] },
+                            { id: 's10-1-2', name: 'Définition des OKR', owner: 'Julien Mercier', rights: ['Approbateur'], documents: [{ name: 'Objectifs et Résultats Clés', tags: ['#okr']}] }
+                        ]
+                    },
+                    {
+                        id: 's10-2', name: 'Relations Investisseurs', angle: 0, owner: 'Directeur Financier', rights: ['Rédacteur', 'Approbateur'],
+                        documents: [{ name: 'Rapport annuel', tags: ['#finance', '#communication'] }],
+                        subProcesses: [
+                            { id: 's10-2-1', name: 'Préparation des rapports', owner: 'Contrôleur de Gestion', rights: ['Rédacteur'], documents: [{ name: 'Reporting financier', tags: ['#reporting']}] },
+                            { id: 's10-2-2', name: 'Assemblée Générale', owner: 'Julien Mercier', rights: ['Approbateur'], documents: [{ name: 'Présentation AG', tags: ['#AG']}] }
+                        ]
+                    }
+                ]
             }
         ];
 
@@ -423,6 +541,9 @@
 
                 planetEl.classList.add('active');
 
+                // Affiche la fiche d'identité de la planète dans le panneau
+                displayPlanetInfoPanel(planetData);
+
                 const angleRad = (planetData.angle * Math.PI) / 180;
                 const x = Math.cos(angleRad) * planetData.distance;
                 const y = Math.sin(angleRad) * planetData.distance;
@@ -433,6 +554,36 @@
             }
 
             sun.addEventListener('click', resetZoomAndSelection);
+
+            function displayPlanetInfoPanel(planetData) {
+                panelContent.innerHTML = `
+                    <h2 class="text-2xl font-bold text-white mb-2">${planetData.name}</h2>
+                    <p class="text-sm text-gray-400 mb-4">Macro-processus</p>
+
+                    <div class="mb-6">
+                        <h3 class="font-semibold mb-2 text-gray-200">Description</h3>
+                        <p class="text-gray-300">${planetData.description}</p>
+                    </div>
+
+                    <div class="mb-6">
+                        <h3 class="font-semibold mb-2 text-gray-200">Responsable du Macro-processus</h3>
+                        <p class="text-gray-300">${planetData.macroOwner}</p>
+                    </div>
+
+                    <div>
+                        <h3 class="font-semibold mb-2 text-gray-200">Indicateurs Clés (KPIs)</h3>
+                        <ul class="space-y-2">
+                            ${planetData.kpis.map(kpi => `
+                                <li class="bg-gray-800 p-3 rounded-lg flex justify-between items-center">
+                                    <span class="font-medium text-gray-100">${kpi.name}</span>
+                                    <span class="font-bold text-xl text-cyan-400">${kpi.value}</span>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `;
+                infoPanel.classList.add('visible');
+            }
 
             function displaySubProcessInfoPanel(planetData, satData, subProcessData) {
                 const rightsColors = {
