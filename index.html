@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cartographie des Processus - Système Solaire</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --glow-color: #fff700;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+        /* --- Fond étoilé animé --- */
+        .stars, .twinkling {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .stars {
+            background: #000 url(https://www.script-tutorials.com/demos/360/images/stars.png) repeat top center;
+            z-index: -3;
+        }
+        .twinkling {
+            background: transparent url(https://www.script-tutorials.com/demos/360/images/twinkling.png) repeat top center;
+            z-index: -2;
+            animation: move-twink-back 200s linear infinite;
+        }
+        @keyframes move-twink-back {
+            from { background-position: 0 0; }
+            to { background-position: -10000px 5000px; }
+        }
+
+        /* --- Styles du système solaire --- */
+        .solar-system-container {
+            transition: transform 1s ease-in-out;
+        }
+        .sun {
+            box-shadow: 0 0 120px 30px var(--glow-color), 0 0 40px 10px var(--glow-color) inset;
+        }
+        .planet {
+            transition: all 0.5s ease;
+            cursor: pointer;
+        }
+        .planet:hover {
+            transform: scale(1.15);
+            filter: brightness(1.2);
+        }
+        .planet-label {
+            position: absolute;
+            bottom: -20px;
+            width: 150px;
+            text-align: center;
+            font-size: 12px;
+            color: #a0aec0; /* gray-400 */
+            pointer-events: none;
+            opacity: 0.8;
+        }
+        .satellite {
+            position: absolute;
+            opacity: 0;
+            transform: scale(0.5);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            pointer-events: none;
+        }
+        .planet.active .satellite {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: auto;
+        }
+        .kpi-container {
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+        }
+        .planet.active .kpi-container {
+            opacity: 1;
+        }
+
+        /* --- Animation de zoom --- */
+        .solar-system-container.zoomed-in {
+            /* Le scale est maintenant appliqué via un style inline pour un centrage dynamique.
+               Cette classe peut être utilisée pour d'autres styles liés au zoom si nécessaire. */
+        }
+
+        /* --- Panneau d'information --- */
+        #info-panel {
+            transition: transform 0.5s ease-in-out;
+            transform: translateX(100%);
+        }
+        #info-panel.visible {
+            transform: translateX(0);
+        }
+
+        /* --- Styles pour la recherche --- */
+        .highlight {
+            box-shadow: 0 0 20px 5px #00aaff, 0 0 30px 10px #00aaff inset;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 20px 5px #00aaff, 0 0 30px 10px #00aaff inset; }
+            50% { box-shadow: 0 0 30px 10px #00aaff, 0 0 40px 15px #00aaff inset; }
+            100% { box-shadow: 0 0 20px 5px #00aaff, 0 0 30px 10px #00aaff inset; }
+        }
+    </style>
+</head>
+<body class="bg-black text-white min-h-screen relative">
+    <div class="stars"></div>
+    <div class="twinkling"></div>
+
+    <!-- Barre de recherche -->
+    <header class="absolute top-0 left-0 right-0 p-4 z-20">
+        <div class="max-w-xl mx-auto relative">
+            <input type="text" id="search-bar" placeholder="Rechercher un processus, un document, un tag..." class="w-full bg-gray-900/50 text-white placeholder-gray-400 border border-gray-700 rounded-full py-3 px-6 focus:outline-none focus:ring-2 focus:ring-cyan-400 backdrop-blur-sm">
+            <div id="search-results" class="absolute top-full mt-2 w-full bg-gray-900/80 border border-gray-700 rounded-lg max-h-60 overflow-y-auto hidden backdrop-blur-sm"></div>
+        </div>
+    </header>
+
+    <!-- Conteneur principal du système solaire -->
+    <main id="solar-system-wrapper" class="w-full h-screen flex items-center justify-center">
+        <div id="solar-system-container" class="solar-system-container relative w-[800px] h-[800px]">
+            <!-- Soleil -->
+            <div class="sun absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-yellow-400 rounded-full cursor-pointer" id="sun"></div>
+
+            <!-- Planètes et orbites seront injectées ici par JavaScript -->
+        </div>
+    </main>
+
+    <!-- Panneau d'information latéral -->
+    <aside id="info-panel" class="fixed top-0 right-0 h-full w-full max-w-md bg-gray-900/70 backdrop-blur-lg border-l border-gray-700 z-30 p-6 overflow-y-auto">
+        <button id="close-panel" class="absolute top-4 right-4 text-gray-400 hover:text-white text-3xl leading-none">&times;</button>
+        <div id="panel-content">
+            <!-- Le contenu sera injecté ici par JavaScript -->
+        </div>
+    </aside>
+
+    <script>
+        // --- Base de données simulée ---
+        const solarSystemData = [
+            // Orbite 1
+            {
+                id: 'p1', name: 'RH & Administration', size: 60, color: 'bg-blue-500', distance: 150, angle: 45,
+                kpis: [{ name: 'Satisfaction employé', value: '92%' }, { name: 'Temps de recrutement', value: '28j' }, { name: 'Turnover', value: '8%' }],
+                satellites: [{ id: 's1-1', name: 'Recrutement', angle: 0, documents: [{ name: 'Procédure de sélection', tags: ['#rh', '#entretien'] }], owner: 'Alice Martin', rights: ['Lecteur', 'Rédacteur'] }]
+            },
+            {
+                id: 'p4', name: 'Finance & Comptabilité', size: 55, color: 'bg-green-600', distance: 150, angle: 225,
+                kpis: [{ name: 'Marge brute', value: '60%' }, { name: 'DSO', value: '45j' }, { name: 'Respect budget', value: '98%' }],
+                satellites: [{ id: 's4-1', name: 'Facturation', angle: 180, documents: [{ name: 'MO: Emission facture', tags: ['#finance', '#client'] }], owner: 'Claire Durand', rights: ['Lecteur', 'Approbateur'] }]
+            },
+            // Orbite 2
+            {
+                id: 'p2', name: 'Ventes & Marketing', size: 70, color: 'bg-red-600', distance: 250, angle: 120,
+                kpis: [{ name: 'Taux de conversion', value: '4.5%' }, { name: 'CAC', value: '150€' }, { name: 'Leads / mois', value: '1,200' }],
+                satellites: [{ id: 's2-1', name: 'Génération de leads', angle: 30, documents: [{ name: 'Guide de campagne pub', tags: ['#marketing', '#ads'] }], owner: 'Carole Dubois', rights: ['Rédacteur'] }]
+            },
+            {
+                id: 'p5', name: 'Systèmes d\'Information', size: 65, color: 'bg-indigo-500', distance: 250, angle: 0,
+                kpis: [{ name: 'Uptime des services', value: '99.98%' }, { name: 'Tickets résolus', value: '95%' }, { name: 'Sécurité', value: 'A+' }],
+                satellites: [{ id: 's5-1', name: 'Maintenance Infra', angle: 90, documents: [{ name: 'Procédure de backup', tags: ['#it', '#sécurité'] }], owner: 'Marc Petit', rights: ['Lecteur', 'Rédacteur'] }]
+            },
+            {
+                id: 'p7', name: 'Qualité & Conformité', size: 60, color: 'bg-teal-500', distance: 250, angle: 270,
+                kpis: [{ name: 'Non-conformités', value: '12' }, { name: 'Taux de certification', value: '100%' }, { name: 'Audits réussis', value: '10/10' }],
+                satellites: [{ id: 's7-1', name: 'Audit Interne', angle: 0, documents: [{ name: 'Plan d\'audit annuel', tags: ['#qualité', '#iso9001'] }], owner: 'Sophie Lambert', rights: ['Approbateur'] }]
+            },
+            // Orbite 3
+            {
+                id: 'p3', name: 'Production & Logistique', size: 80, color: 'bg-orange-500', distance: 380, angle: 210,
+                kpis: [{ name: 'Efficacité production', value: '85%' }, { name: 'Délai livraison', value: '3.2j' }, { name: 'Taux de défauts', value: '0.8%' }],
+                satellites: [{ id: 's3-1', name: 'Planification', angle: 0, documents: [{ name: 'MO: Lancement production', tags: ['#planning'] }], owner: 'Eva Moreau', rights: ['Lecteur', 'Rédacteur'] }]
+            },
+            {
+                id: 'p6', name: 'R&D', size: 75, color: 'bg-purple-600', distance: 380, angle: 330,
+                kpis: [{ name: 'Projets livrés', value: '5' }, { name: 'Budget R&D', value: '1.2M€' }, { name: 'Brevets déposés', value: '2' }],
+                satellites: [{ id: 's6-1', name: 'Veille Technologique', angle: 270, documents: [{ name: 'Rapport de veille mensuel', tags: ['#innovation'] }], owner: 'Luc Bernard', rights: ['Lecteur'] }]
+            },
+            {
+                id: 'p8', name: 'Achats & Approvisionnement', size: 70, color: 'bg-yellow-500', distance: 380, angle: 150,
+                kpis: [{ name: 'Économies réalisées', value: '12%' }, { name: 'Taux de service fournisseur', value: '98%' }, { name: 'Délai paiement', value: '35j' }],
+                satellites: [{ id: 's8-1', name: 'Sourcing Fournisseurs', angle: 120, documents: [{ name: 'Procédure de sélection', tags: ['#achats'] }], owner: 'Hélène Fournier', rights: ['Rédacteur'] }]
+            },
+            {
+                id: 'p9', name: 'Service Client', size: 65, color: 'bg-pink-500', distance: 380, angle: 30,
+                kpis: [{ name: 'Satisfaction client', value: '95%' }, { name: 'Temps de réponse moyen', value: '2h' }, { name: 'Taux de résolution', value: '88%' }],
+                satellites: [{ id: 's9-1', name: 'Support Technique', angle: 0, documents: [{ name: 'FAQ Produit A', tags: ['#support', '#faq'] }], owner: 'Thomas Leroy', rights: ['Lecteur', 'Rédacteur'] }]
+            },
+            {
+                id: 'p10', name: 'Direction Générale', size: 70, color: 'bg-gray-400', distance: 380, angle: 90,
+                kpis: [{ name: 'Croissance CA', value: '+15%' }, { name: 'EBITDA', value: '2.5M€' }, { name: 'Part de marché', value: '22%' }],
+                satellites: [{ id: 's10-1', name: 'Stratégie', angle: 180, documents: [{ name: 'Plan stratégique 2025', tags: ['#stratégie'] }], owner: 'Julien Mercier', rights: ['Approbateur'] }]
+            }
+        ];
+
+        // --- Initialisation de l'application ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('solar-system-container');
+            const infoPanel = document.getElementById('info-panel');
+            const panelContent = document.getElementById('panel-content');
+            const closePanelBtn = document.getElementById('close-panel');
+            const sun = document.getElementById('sun');
+            const searchBar = document.getElementById('search-bar');
+            const searchResults = document.getElementById('search-results');
+
+            const uniqueDistances = [...new Set(solarSystemData.map(p => p.distance))];
+
+            // Création des orbites
+            uniqueDistances.forEach(distance => {
+                const orbit = document.createElement('div');
+                orbit.className = 'absolute top-1/2 left-1/2 border border-dashed border-gray-700 rounded-full pointer-events-none';
+                orbit.style.width = `${distance * 2}px`;
+                orbit.style.height = `${distance * 2}px`;
+                orbit.style.transform = 'translate(-50%, -50%)';
+                container.appendChild(orbit);
+            });
+
+            // --- Génération dynamique des planètes ---
+            solarSystemData.forEach(planetData => {
+                const angleRad = (planetData.angle * Math.PI) / 180;
+                const x = Math.cos(angleRad) * planetData.distance;
+                const y = Math.sin(angleRad) * planetData.distance;
+
+                // Création de la planète
+                const planetEl = document.createElement('div');
+                planetEl.id = planetData.id;
+                planetEl.className = `planet absolute top-1/2 left-1/2 ${planetData.color} rounded-full flex items-center justify-center`;
+                planetEl.style.width = `${planetData.size}px`;
+                planetEl.style.height = `${planetData.size}px`;
+                planetEl.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
+
+                // Ajout du nom de la planète
+                const label = document.createElement('div');
+                label.className = 'planet-label';
+                label.textContent = planetData.name;
+                planetEl.appendChild(label);
+
+                // Création des KPIs
+                const kpiContainer = document.createElement('div');
+                kpiContainer.className = 'kpi-container absolute -top-20 w-48 text-center text-xs text-gray-300 bg-black/30 p-2 rounded';
+                kpiContainer.innerHTML = planetData.kpis.map(kpi => `<div><strong>${kpi.name}:</strong> ${kpi.value}</div>`).join('');
+                planetEl.appendChild(kpiContainer);
+
+                // Création des satellites
+                planetData.satellites.forEach(satData => {
+                    const satAngleRad = (satData.angle * Math.PI) / 180;
+                    const satDistance = (planetData.size / 2) + 30;
+                    const satX = Math.cos(satAngleRad) * satDistance;
+                    const satY = Math.sin(satAngleRad) * satDistance;
+
+                    const satelliteEl = document.createElement('div');
+                    satelliteEl.className = 'satellite w-4 h-4 bg-gray-400 rounded-full cursor-pointer hover:bg-cyan-400';
+                    satelliteEl.style.transform = `translate(-50%, -50%) translate(${satX}px, ${satY}px)`;
+                    satelliteEl.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        displayInfoPanel(planetData, satData);
+                    });
+                    planetEl.appendChild(satelliteEl);
+                });
+
+                planetEl.addEventListener('click', () => handlePlanetClick(planetEl, planetData));
+                container.appendChild(planetEl);
+            });
+
+            // --- Gestion des clics et événements ---
+            function resetZoomAndSelection() {
+                document.querySelectorAll('.planet.active').forEach(p => p.classList.remove('active'));
+                document.querySelectorAll('.highlight').forEach(el => el.classList.remove('highlight'));
+                container.classList.remove('zoomed-in');
+                container.style.transform = '';
+                infoPanel.classList.remove('visible');
+            }
+
+            function handlePlanetClick(planetEl, planetData) {
+                const isAlreadyActive = planetEl.classList.contains('active');
+
+                if (isAlreadyActive) {
+                    resetZoomAndSelection();
+                    return;
+                }
+
+                // Réinitialiser avant de zoomer sur une nouvelle planète
+                resetZoomAndSelection();
+
+                planetEl.classList.add('active');
+
+                const angleRad = (planetData.angle * Math.PI) / 180;
+                const x = Math.cos(angleRad) * planetData.distance;
+                const y = Math.sin(angleRad) * planetData.distance;
+                const scale = 2.5;
+
+                container.classList.add('zoomed-in');
+                container.style.transform = `scale(${scale}) translate(${-x}px, ${-y}px)`;
+            }
+
+            sun.addEventListener('click', resetZoomAndSelection);
+
+            function displayInfoPanel(planetData, satData) {
+                const rightsColors = {
+                    'Lecteur': 'bg-blue-500',
+                    'Rédacteur': 'bg-green-500',
+                    'Approbateur': 'bg-yellow-500'
+                };
+
+                panelContent.innerHTML = `
+                    <h2 class="text-2xl font-bold text-cyan-400 mb-1">${satData.name}</h2>
+                    <p class="text-sm text-gray-400 mb-4">Macro-processus: ${planetData.name}</p>
+
+                    <div class="mb-6">
+                        <h3 class="font-semibold mb-2 text-gray-200">Responsable du processus</h3>
+                        <p class="text-gray-300">${satData.owner}</p>
+                    </div>
+
+                    <div class="mb-6">
+                        <h3 class="font-semibold mb-2 text-gray-200">Droits</h3>
+                        <div class="flex flex-wrap gap-2">
+                            ${satData.rights.map(r => `<span class="text-xs font-medium px-2 py-1 rounded-full text-white ${rightsColors[r] || 'bg-gray-500'}">${r}</span>`).join('')}
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="font-semibold mb-2 text-gray-200">Documents associés</h3>
+                        <ul class="space-y-3">
+                            ${satData.documents.map(doc => `
+                                <li class="bg-gray-800 p-3 rounded-lg">
+                                    <p class="font-medium text-gray-100">${doc.name}</p>
+                                    <div class="flex flex-wrap gap-2 mt-2">
+                                        ${doc.tags.map(tag => `<span class="text-xs bg-gray-700 text-cyan-300 px-2 py-1 rounded">${tag}</span>`).join('')}
+                                    </div>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `;
+                infoPanel.classList.add('visible');
+            }
+
+            closePanelBtn.addEventListener('click', () => {
+                infoPanel.classList.remove('visible');
+            });
+
+            // --- Logique de la recherche ---
+            searchBar.addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase().trim();
+                document.querySelectorAll('.highlight').forEach(el => el.classList.remove('highlight'));
+                if (query.length < 2) {
+                    searchResults.innerHTML = '';
+                    searchResults.classList.add('hidden');
+                    return;
+                }
+                const results = [];
+                solarSystemData.forEach(planet => {
+                    if (planet.name.toLowerCase().includes(query)) {
+                        results.push({ type: 'Macro-processus', name: planet.name, elementId: planet.id });
+                    }
+                    planet.satellites.forEach(satellite => {
+                        if (satellite.name.toLowerCase().includes(query)) {
+                            results.push({ type: 'Processus', name: satellite.name, context: planet.name, elementId: planet.id });
+                        }
+                        satellite.documents.forEach(doc => {
+                            if (doc.name.toLowerCase().includes(query) || doc.tags.some(tag => tag.toLowerCase().includes(query))) {
+                                results.push({ type: 'Document', name: doc.name, context: `${planet.name} > ${satellite.name}`, elementId: planet.id });
+                            }
+                        });
+                    });
+                });
+                displaySearchResults(results);
+            });
+
+            function displaySearchResults(results) {
+                if (results.length === 0) {
+                    searchResults.innerHTML = '<div class="p-3 text-gray-400">Aucun résultat</div>';
+                    searchResults.classList.remove('hidden');
+                    return;
+                }
+                searchResults.innerHTML = results.map(r => `
+                    <div class="p-3 hover:bg-gray-800 cursor-pointer border-b border-gray-700 search-result-item" data-element-id="${r.elementId}">
+                        <p class="font-semibold text-white">${r.name}</p>
+                        <p class="text-xs text-gray-400">${r.type} ${r.context ? `(${r.context})` : ''}</p>
+                    </div>
+                `).join('');
+                searchResults.classList.remove('hidden');
+                document.querySelectorAll('.search-result-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const elementId = item.dataset.elementId;
+                        const planetEl = document.getElementById(elementId);
+                        if (planetEl) {
+                            handlePlanetClick(planetEl, solarSystemData.find(p => p.id === elementId));
+                            planetEl.classList.add('highlight');
+                        }
+                        searchResults.classList.add('hidden');
+                        searchBar.value = item.querySelector('p.font-semibold').textContent;
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>
