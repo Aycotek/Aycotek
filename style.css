@@ -1,0 +1,202 @@
+:root {
+    --glow-color: #fff700;
+}
+body {
+    font-family: 'Inter', sans-serif;
+    overflow: hidden;
+}
+/* --- Fond étoilé animé --- */
+.stars, .twinkling {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+.stars {
+    background: #000 url(https://www.script-tutorials.com/demos/360/images/stars.png) repeat top center;
+    z-index: -3;
+}
+.twinkling {
+    background: transparent url(https://www.script-tutorials.com/demos/360/images/twinkling.png) repeat top center;
+    z-index: -2;
+    animation: move-twink-back 200s linear infinite;
+}
+@keyframes move-twink-back {
+    from { background-position: 0 0; }
+    to { background-position: -10000px 5000px; }
+}
+
+/* --- Styles des corps célestes --- */
+.galaxy {
+    position: absolute;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: radial-gradient(ellipse at center, rgba(100, 120, 255, 0.6) 0%, rgba(100, 120, 255, 0) 65%);
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 10px;
+    box-shadow: 0 0 20px rgba(100, 120, 255, 0.4);
+    transform: translate(-50%, -50%); /* Pour centrer la galaxie sur ses coordonnées */
+}
+
+.galaxy:hover {
+    transform: translate(-50%, -50%) scale(1.1);
+    box-shadow: 0 0 40px rgba(150, 170, 255, 0.7);
+}
+
+.galaxy-label {
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    pointer-events: none; /* Pour que le clic traverse le label et atteigne la galaxie */
+    text-shadow: 0 0 5px black, 0 0 10px black;
+}
+
+#travel-path {
+    stroke: rgba(255, 255, 255, 0.4);
+    stroke-width: 2px;
+    stroke-dasharray: 8 8; /* Effet pointillé */
+    fill: none;
+    animation: dash 60s linear infinite;
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: -1000;
+  }
+}
+
+#wikicovage {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 24px;
+    height: 24px;
+    background: radial-gradient(circle at 50% 50%, white 5%, cyan 40%, rgba(0, 255, 255, 0) 70%);
+    border-radius: 50%;
+    box-shadow: 0 0 10px cyan, 0 0 20px white;
+    transform: translate(-50%, -50%); /* Centrage sur sa position */
+    z-index: 10;
+}
+
+#universe-container {
+    transition: transform 1s ease-in-out;
+}
+.sun {
+    box-shadow: 0 0 120px 30px var(--glow-color), 0 0 40px 10px var(--glow-color) inset;
+}
+.planet {
+    transition: all 0.5s ease;
+    cursor: pointer;
+}
+.planet:hover {
+    transform: scale(1.15);
+    filter: brightness(1.2);
+}
+.planet-label {
+    position: absolute;
+    bottom: -20px;
+    width: 150px;
+    text-align: center;
+    font-size: 12px;
+    color: #a0aec0; /* gray-400 */
+    pointer-events: none;
+    opacity: 0.8;
+}
+.satellite {
+    position: absolute;
+    opacity: 0;
+    /* La position est gérée par des variables CSS pour permettre l'animation de la taille */
+    transform: translate(-50%,-50%) translate(var(--sat-x, 0px), var(--sat-y, 0px)) scale(0.5);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    pointer-events: none;
+}
+.planet.active .satellite {
+    opacity: 1;
+    transform: translate(-50%,-50%) translate(var(--sat-x, 0px), var(--sat-y, 0px)) scale(1);
+    pointer-events: auto;
+}
+.moon {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background-color: #cbd5e0; /* gray-300 */
+    border-radius: 9999px;
+    cursor: pointer;
+    opacity: 0;
+    /* Les lunes sont positionnées par rapport au centre de leur satellite parent */
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) translate(var(--moon-x, 0px), var(--moon-y, 0px)) scale(0.5);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none;
+    z-index: 10;
+}
+.moon:hover {
+    background-color: #f6e05e; /* yellow-300 */
+}
+.planet.active .satellite .moon {
+    opacity: 1;
+    transform: translate(-50%, -50%) translate(var(--moon-x, 0px), var(--moon-y, 0px)) scale(1);
+    pointer-events: auto;
+}
+
+/* --- Animation de zoom --- */
+.solar-system-container.zoomed-in {
+    /* Le scale est maintenant appliqué via un style inline pour un centrage dynamique.
+       Cette classe peut être utilisée pour d'autres styles liés au zoom si nécessaire. */
+}
+
+/* --- Panneau d'information --- */
+.kpi-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 9999px;
+    flex-shrink: 0;
+}
+#info-panel {
+    transition: transform 0.5s ease-in-out;
+    transform: translateX(100%);
+}
+.document-item {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+.document-item:hover {
+    background-color: #2d3748; /* gray-800 */
+}
+.document-details {
+    display: none;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #4a5568; /* gray-600 */
+    font-size: 12px;
+    color: #a0aec0; /* gray-400 */
+}
+.document-item.expanded .document-details {
+    display: block;
+}
+#info-panel.visible {
+    transform: translateX(0);
+}
+
+/* --- Styles pour la recherche --- */
+.highlight {
+    box-shadow: 0 0 20px 5px #00aaff, 0 0 30px 10px #00aaff inset;
+    animation: pulse 2s infinite;
+}
+@keyframes pulse {
+    0% { box-shadow: 0 0 20px 5px #00aaff, 0 0 30px 10px #00aaff inset; }
+    50% { box-shadow: 0 0 30px 10px #00aaff, 0 0 40px 15px #00aaff inset; }
+    100% { box-shadow: 0 0 20px 5px #00aaff, 0 0 30px 10px #00aaff inset; }
+}
