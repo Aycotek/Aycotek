@@ -14,30 +14,47 @@ const universeData = [
       {
         id: 'ss1-veille', name: 'Processus de Veille', position: { x: '20%', y: '25%' },
         planets: [
-          { id: 'p1-veille-tech', name: 'Veille Technologique', position: { x: '30%', y: '40%' }, documents: [{name: 'Rapport Tendance IA Q2'}, {name: 'Analyse concurrentielle Web3'}] },
-          { id: 'p1-veille-marche', name: 'Veille Marché', position: { x: '70%', y: '60%' }, documents: [{name: 'Etude de marché - Secteur A'}, {name: 'Synthèse besoins clients'}] },
+          { id: 'p1-veille-tech', name: 'Veille Technologique', position: { x: '30%', y: '40%' }, documents: [
+            { name: 'Rapport Tendance IA Q2', creator: 'A. Turing', approver: 'J. Von Neumann', lifespan: '2025-12-31', status: 'approved' },
+            { name: 'Analyse concurrentielle Web3', creator: 'S. Nakamoto', approver: 'V. Buterin', lifespan: '2025-06-30', status: 'pending_approval' }
+          ]},
+          { id: 'p1-veille-marche', name: 'Veille Marché', position: { x: '70%', y: '60%' }, documents: [
+            { name: 'Etude de marché - Secteur A', creator: 'P. Kotler', approver: 'D. Ogilvy', lifespan: '2026-01-01', status: 'approved' }
+          ]},
         ]
       },
       {
         id: 'ss1-ideation', name: 'Processus d\'Idéation', position: { x: '40%', y: '75%' },
         kpis: [{ name: "Taux de conversion Idée->Proto", value: "25%" }],
         planets: [
-          { id: 'p2-ateliers', name: 'Ateliers de créativité', position: { x: '25%', y: '60%' }, documents: [{name: 'Compte-rendu Atelier "Blue Sky"'}] },
-          { id: 'p2-recueil', name: 'Recueil des idées', position: { x: '65%', y: '30%' }, documents: [{name: 'Export plateforme à idées v3'}] },
+          { id: 'p2-ateliers', name: 'Ateliers de créativité', position: { x: '25%', y: '60%' }, documents: [
+            { name: 'Compte-rendu Atelier "Blue Sky"', creator: 'L. Pauling', approver: 'M. Curie', lifespan: 'N/A', status: 'approved' }
+          ]},
+          { id: 'p2-recueil', name: 'Recueil des idées', position: { x: '65%', y: '30%' }, documents: [
+            { name: 'Export plateforme à idées v3', creator: 'Admin', approver: 'Admin', lifespan: 'N/A', status: 'approved' }
+          ]},
         ]
       },
       {
         id: 'ss1-poc', name: 'Processus de Prototypage', position: { x: '70%', y: '20%' },
         planets: [
-          { id: 'p3-maquettage', name: 'Maquettage UX/UI', position: { x: '40%', y: '30%' }, documents: [{name: 'Maquette Figma v4'}, {name: 'Parcours utilisateur validé'}] },
-          { id: 'p3-dev-poc', name: 'Développement PoC', position: { x: '60%', y: '70%' }, documents: [{name: 'Lien vers repo Git du PoC'}, {name: 'Fiche de tests techniques'}] },
+          { id: 'p3-maquettage', name: 'Maquettage UX/UI', position: { x: '40%', y: '30%' }, documents: [
+            { name: 'Maquette Figma v4', creator: 'J. Ive', approver: 'S. Jobs', lifespan: '2025-02-01', status: 'pending_approval' }
+          ]},
+          { id: 'p3-dev-poc', name: 'Développement PoC', position: { x: '60%', y: '70%' }, documents: [
+            { name: 'Lien vers repo Git du PoC', creator: 'L. Torvalds', approver: 'R. Stallman', lifespan: 'N/A', status: 'approved' }
+          ]},
         ]
       },
        {
         id: 'ss1-validation', name: 'Processus de Validation', position: { x: '80%', y: '70%' },
         planets: [
-          { id: 'p4-tests-utilisateurs', name: 'Tests Utilisateurs', position: { x: '35%', y: '65%' }, documents: [{name: 'Retours verbatim utilisateurs'}, {name: 'Rapport de tests v2'}] },
-          { id: 'p4-validation-metier', name: 'Validation Métier', position: { x: '75%', y: '35%' }, documents: [{name: 'PV de validation du COPIL'}] },
+          { id: 'p4-tests-utilisateurs', name: 'Tests Utilisateurs', position: { x: '35%', y: '65%' }, documents: [
+            { name: 'Retours verbatim utilisateurs', creator: 'U. Xperience', approver: 'C. Satisfaction', lifespan: '2025-04-15', status: 'approved' }
+          ]},
+          { id: 'p4-validation-metier', name: 'Validation Métier', position: { x: '75%', y: '35%' }, documents: [
+            { name: 'PV de validation du COPIL', creator: 'C.E.O.', approver: 'C.O.O.', lifespan: '2025-05-01', status: 'approved' }
+          ]},
         ]
       }
     ]
@@ -46,10 +63,10 @@ const universeData = [
     id: 'g2-market', name: 'Galaxie de la Commercialisation', type: 'on-path', position: { x: '40%', y: '60%' }, theme: { primary: '#ff8c00', secondary: '#ffdd00' },
     description: 'Une galaxie spirale où les prototypes sont polis pour devenir des produits phares.', valueProposition: "Augmentation des parts de marché, croissance du chiffre d'affaires.",
     solarSystems: [
-      { id: 'ss2-strategie', name: 'Stratégie Marketing', position: { x: '20%', y: '30%' }, planets: [{id: 'p5-branding', name: 'Branding', position: {x:'50%', y:'50%'}, documents:[]}] },
-      { id: 'ss2-contenu', name: 'Création de Contenu', position: { x: '40%', y: '70%' }, planets: [{id: 'p6-blog', name: 'Blog', position: {x:'50%', y:'50%'}, documents:[]}] },
-      { id: 'ss2-campagnes', name: 'Gestion des Campagnes', position: { x: '70%', y: '30%' }, planets: [{id: 'p7-ads', name: 'Publicités en ligne', position: {x:'50%', y:'50%'}, documents:[]}] },
-      { id: 'ss2-analyse', name: 'Analyse de la Performance', position: { x: '80%', y: '70%' }, planets: [{id: 'p8-reporting', name: 'Reporting', position: {x:'50%', y:'50%'}, documents:[]}] },
+      { id: 'ss2-strategie', name: 'Stratégie Marketing', position: { x: '20%', y: '30%' }, planets: [{id: 'p5-branding', name: 'Branding', position: {x:'50%', y:'50%'}, documents:[{name: 'Charte Graphique v2', creator: 'P. Rand', approver: 'S. Bass', lifespan: '2028-01-01', status: 'approved' }]}] },
+      { id: 'ss2-contenu', name: 'Création de Contenu', position: { x: '40%', y: '70%' }, planets: [{id: 'p6-blog', name: 'Blog', position: {x:'50%', y:'50%'}, documents:[{name: 'Article "Top 10 Features"', creator: 'S. Godin', approver: 'J. Dujardin', lifespan: 'N/A', status: 'pending_approval' }]}] },
+      { id: 'ss2-campagnes', name: 'Gestion des Campagnes', position: { x: '70%', y: '30%' }, planets: [{id: 'p7-ads', name: 'Publicités en ligne', position: {x:'50%', y:'50%'}, documents:[{name: 'Rapport Campagne T2', creator: 'D. Draper', approver: 'P. Olson', lifespan: '2025-07-15', status: 'approved' }]}] },
+      { id: 'ss2-analyse', name: 'Analyse de la Performance', position: { x: '80%', y: '70%' }, planets: [{id: 'p8-reporting', name: 'Reporting', position: {x:'50%', y:'50%'}, documents:[{name: 'Dashboard Suivi Ventes', creator: 'Data Team', approver: 'C.F.O.', lifespan: 'N/A', status: 'approved' }]}] },
     ]
   },
   {
@@ -86,7 +103,7 @@ const universeData = [
 
 // --- Application ---
 document.addEventListener('DOMContentLoaded', () => {
-    const container = document.getElementById('universe-container');
+    const mapContainer = document.getElementById('map-container');
     const infoPanel = document.getElementById('info-panel');
     const panelContent = document.getElementById('panel-content');
     const closePanelBtn = document.getElementById('close-panel');
@@ -107,30 +124,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function drawPath(points) {
-        const svg = createAndAppend('svg', container, { id: 'path-container' });
+        const svg = createAndAppend('svg', mapContainer, { id: 'path-container' });
         svg.style.zIndex = -1;
         const path = createAndAppend('path', svg, { id: 'travel-path' });
         if (points.length < 2) return;
-        points.sort((a, b) => a.x - b.x);
-        let d = `M ${points[0].x} ${points[0].y}`;
-        for (let i = 1; i < points.length; i++) {
-            const p1 = points[i-1], p2 = points[i];
+
+        const rect = mapContainer.getBoundingClientRect();
+        const pixelPoints = points.map(p => ({
+            x: parseFloat(p.position.x) / 100 * rect.width,
+            y: parseFloat(p.position.y) / 100 * rect.height,
+        }));
+
+        pixelPoints.sort((a, b) => a.x - b.x);
+        let d = `M ${pixelPoints[0].x} ${pixelPoints[0].y}`;
+        for (let i = 1; i < pixelPoints.length; i++) {
+            const p1 = pixelPoints[i-1], p2 = pixelPoints[i];
             d += ` C ${p1.x + (p2.x - p1.x) / 2},${p1.y} ${p1.x + (p2.x - p1.x) / 2},${p2.y} ${p2.x},${p2.y}`;
         }
         path.setAttribute('d', d);
     }
 
-    function getPixelPositions(elements) {
-        const rect = container.getBoundingClientRect();
-        return elements.map(el => ({
-            x: parseFloat(el.position.x) / 100 * rect.width,
-            y: parseFloat(el.position.y) / 100 * rect.height,
-        }));
-    }
-
     function render() {
-        container.innerHTML = '';
-        container.style.transform = ''; // Reset zoom
+        mapContainer.innerHTML = '';
+        mapContainer.style.transform = 'translate(0,0) scale(1)';
         backButton.classList.toggle('hidden', viewState.level === 'universe');
 
         let itemsToRender = [];
@@ -159,7 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         itemsToRender.forEach(item => {
-            const el = createAndAppend('div', container, { id: item.id, className: `${itemClass}` });
+            const el = createAndAppend('div', mapContainer, { id: item.id, className: `${itemClass} is-fading-in`});
             el.textContent = item.name;
             Object.assign(el.style, { left: item.position.x, top: item.position.y, transform: 'translate(-50%, -50%)' });
             el.addEventListener('click', (e) => {
@@ -167,24 +183,37 @@ document.addEventListener('DOMContentLoaded', () => {
                 clickHandler(item);
             });
         });
+        drawPath(itemsToRender);
+    }
 
-        drawPath(getPixelPositions(itemsToRender));
+    function transitionTo(newState, clickedElement) {
+        Array.from(mapContainer.children).forEach(child => child.classList.add('is-fading-out'));
+
+        if (clickedElement) {
+            const rect = clickedElement.getBoundingClientRect();
+            const containerRect = mapContainer.getBoundingClientRect();
+            const scale = 3;
+            const translateX = (containerRect.width / 2) - rect.left - (rect.width / 2);
+            const translateY = (containerRect.height / 2) - rect.top - (rect.height / 2);
+            mapContainer.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+        }
+
+        setTimeout(() => {
+            Object.assign(viewState, newState);
+            render();
+        }, 500);
     }
 
     function handleGalaxyClick(galaxy) {
         root.style.setProperty('--theme-primary', galaxy.theme.primary);
         root.style.setProperty('--theme-secondary', galaxy.theme.secondary);
         updateInfoPanel(galaxy);
-        viewState.level = 'galaxy';
-        viewState.activeGalaxyId = galaxy.id;
-        render();
+        transitionTo({ level: 'galaxy', activeGalaxyId: galaxy.id }, document.getElementById(galaxy.id));
     }
 
     function handleSystemClick(system) {
         updateInfoPanel(system);
-        viewState.level = 'system';
-        viewState.activeSystemId = system.id;
-        render();
+        transitionTo({ level: 'system', activeSystemId: system.id }, document.getElementById(system.id));
     }
 
     function handlePlanetClick(planet) {
@@ -192,19 +221,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function navigateBack() {
+        let targetLevel, stateUpdates;
         if (viewState.level === 'system') {
-            viewState.level = 'galaxy';
+            targetLevel = 'galaxy';
             const galaxy = universeData.find(g => g.id === viewState.activeGalaxyId);
             updateInfoPanel(galaxy);
-            viewState.activeSystemId = null;
+            stateUpdates = { activeSystemId: null };
         } else if (viewState.level === 'galaxy') {
-            viewState.level = 'universe';
-            viewState.activeGalaxyId = null;
+            targetLevel = 'universe';
             root.style.removeProperty('--theme-primary');
             root.style.removeProperty('--theme-secondary');
             infoPanel.classList.remove('visible');
+            stateUpdates = { activeGalaxyId: null, activeSystemId: null };
         }
-        render();
+
+        Array.from(mapContainer.children).forEach(child => child.classList.add('is-fading-out'));
+        setTimeout(() => {
+            Object.assign(viewState, { level: targetLevel, ...stateUpdates });
+            render();
+        }, 500);
     }
 
     function updateInfoPanel(data) {
@@ -222,7 +257,16 @@ document.addEventListener('DOMContentLoaded', () => {
             content += `<div class="mb-6"><h3 class="font-semibold mb-2 text-gray-200">Indicateurs</h3><ul class="space-y-2">${kpiList}</ul></div>`;
         }
         if (data.documents && data.documents.length > 0) {
-            const docList = data.documents.map(doc => `<li class="bg-gray-800 p-2 rounded-md text-gray-300">${doc.name}</li>`).join('');
+            const docList = data.documents.map(doc => {
+                const statusColor = doc.status === 'pending_approval' ? 'text-yellow-400' : 'text-gray-400';
+                return `<li class="bg-gray-800 p-3 rounded-md">
+                          <p class="text-gray-100">${doc.name}</p>
+                          <div class="text-xs mt-2 space-y-1 ${statusColor}">
+                            <p>Créateur: ${doc.creator} | Approbateur: ${doc.approver}</p>
+                            <p>Fin de vie: ${doc.lifespan} | Statut: ${doc.status.replace('_', ' ')}</p>
+                          </div>
+                        </li>`;
+            }).join('');
             content += `<div><h3 class="font-semibold mb-2 text-gray-200">Documents Clés</h3><ul class="space-y-2">${docList}</ul></div>`;
         }
         panelContent.innerHTML = content;
@@ -231,7 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function startJourney() {
         if (viewState.level !== 'universe') return;
-        const ship = createAndAppend('div', container, { id: 'wikicovage' });
+        const ship = createAndAppend('div', mapContainer, { id: 'wikicovage' });
         const path = document.getElementById('travel-path');
         if (!path || path.getTotalLength() === 0) return;
         const pathLength = path.getTotalLength();

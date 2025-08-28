@@ -82,8 +82,9 @@ body {
     filter: drop-shadow(0 0 2px white) drop-shadow(0 0 6px cyan);
 }
 
-#universe-container {
-    transition: transform 1s ease-in-out;
+#map-container {
+    transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: center center;
 }
 
 .solar-system {
