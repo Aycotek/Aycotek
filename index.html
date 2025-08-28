@@ -8,37 +8,38 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-black text-white min-h-screen relative">
+<body class="bg-black text-white min-h-screen relative overflow-hidden">
     <div class="stars"></div>
     <div class="twinkling"></div>
 
-    <!-- Barre de recherche -->
-    <header class="absolute top-0 left-0 right-0 p-4 z-20">
-        <div class="max-w-xl mx-auto relative">
-            <input type="text" id="search-bar" placeholder="Rechercher une galaxie, un processus, un document..." class="w-full bg-gray-900/50 text-white placeholder-gray-400 border border-gray-700 rounded-full py-3 px-6 focus:outline-none focus:ring-2 focus:ring-cyan-400 backdrop-blur-sm">
-            <div id="search-results" class="absolute top-full mt-2 w-full bg-gray-900/80 border border-gray-700 rounded-lg max-h-60 overflow-y-auto hidden backdrop-blur-sm"></div>
+    <div id="app-container" class="w-full h-screen">
+        <!-- Le conteneur de la carte qui sera zoomé -->
+        <div id="map-container" class="w-full h-full">
+            <!-- Les galaxies, etc. seront injectés ici -->
         </div>
-    </header>
 
-    <!-- Conteneur principal de l'univers -->
-    <main id="universe-wrapper" class="w-full h-screen overflow-hidden">
-        <div id="universe-container" class="relative w-full h-full">
-            <!-- Les galaxies, le chemin et le vaisseau seront injectés ici -->
+        <!-- Le conteneur pour l'interface utilisateur qui ne zoome pas -->
+        <div id="ui-overlay" class="absolute inset-0 pointer-events-none">
+            <!-- Barre de recherche -->
+            <header class="absolute top-0 left-0 right-0 p-4 z-20 pointer-events-auto">
+                <div class="max-w-xl mx-auto relative">
+                    <input type="text" id="search-bar" placeholder="Rechercher..." class="w-full bg-gray-900/50 text-white placeholder-gray-400 border border-gray-700 rounded-full py-3 px-6 focus:outline-none focus:ring-2 focus:ring-cyan-400 backdrop-blur-sm">
+                    <div id="search-results" class="absolute top-full mt-2 w-full bg-gray-900/80 border border-gray-700 rounded-lg max-h-60 overflow-y-auto hidden backdrop-blur-sm"></div>
+                </div>
+            </header>
+
+            <!-- Panneau d'information latéral -->
+            <aside id="info-panel" class="fixed top-0 right-0 h-full w-full max-w-md bg-gray-900/70 backdrop-blur-lg border-l border-gray-700 z-30 p-6 overflow-y-auto pointer-events-auto transition-transform transform translate-x-full">
+                <button id="close-panel" class="absolute top-4 right-4 text-gray-400 hover:text-white text-3xl leading-none">&times;</button>
+                <div id="panel-content"></div>
+            </aside>
+
+            <!-- Bouton de navigation -->
+            <button id="back-button" class="hidden fixed top-5 left-5 z-40 bg-gray-800/50 text-white px-4 py-2 rounded-full border border-gray-700 backdrop-blur-sm hover:bg-gray-700 transition-colors pointer-events-auto">
+                &larr; Retour
+            </button>
         </div>
-    </main>
-
-    <!-- Panneau d'information latéral -->
-    <aside id="info-panel" class="fixed top-0 right-0 h-full w-full max-w-md bg-gray-900/70 backdrop-blur-lg border-l border-gray-700 z-30 p-6 overflow-y-auto">
-        <button id="close-panel" class="absolute top-4 right-4 text-gray-400 hover:text-white text-3xl leading-none">&times;</button>
-        <div id="panel-content">
-            <!-- Le contenu sera injecté ici par JavaScript -->
-        </div>
-    </aside>
-
-    <!-- Bouton de navigation pour remonter les niveaux -->
-    <button id="back-button" class="hidden fixed top-5 left-5 z-40 bg-gray-800/50 text-white px-4 py-2 rounded-full border border-gray-700 backdrop-blur-sm hover:bg-gray-700 transition-colors">
-        &larr; Retour à la vue précédente
-    </button>
+    </div>
 
     <script src="script.js"></script>
 </body>
