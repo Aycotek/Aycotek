@@ -8,18 +8,21 @@ const universeData = [
     position: { x: '15%', y: '40%' },
     description: "Une nébuleuse bouillonnante où les idées naissent des gaz cosmiques et se transforment en prototypes stellaires. C'est le berceau de toute nouvelle création.",
     valueProposition: "Réduction du temps de mise sur le marché, création de nouvelles sources de revenus, avantage concurrentiel durable.",
+    kpis: [{ name: "Taux de nouvelles idées", value: "12/mois" }, { name: "Budget R&D", value: "15% du CA" }],
     solarSystems: [
       {
         id: 'ss1-ideation',
         name: 'Système de l\'Idéation',
         description: 'Ici, les concepts sont des comètes filant dans tous les sens avant d\'être capturés par un puits gravitationnel.',
+        kpis: [{ name: "Taux de conversion Idée->Proto", value: "25%" }],
         planets: [
           {
             id: 'p1-veille',
-            name: 'Planète de la Veille Concurrentielle',
+            name: 'Planète de la Veille',
             description: 'Une planète recouverte de capteurs qui analysent en permanence les signaux émis par les autres galaxies.',
             validationRules: "Le rapport de veille doit être validé par le 'Conseil des Stratèges' avant d'entrer en phase de prototypage.",
             lifecycle: 'Données valides pendant 1 cycle galactique (3 mois).',
+            kpis: [{ name: 'Sources analysées', value: '1,337' }, { name: 'Pertinence des signaux', value: '89%' }],
             satellites: [
               { id: 's1-analyse-marche', name: 'Satellite d\'Analyse de Marché', description: 'Analyse les besoins non comblés des populations galactiques.' },
               { id: 's1-veille-techno', name: 'Satellite de Veille Technologique', description: 'Détecte les nouvelles technologies émergentes.' },
@@ -27,10 +30,11 @@ const universeData = [
           },
           {
             id: 'p2-brainstorming',
-            name: 'Planète du Brainstorming Perpétuel',
+            name: 'Planète du Brainstorming',
             description: 'Une géante gazeuse où les tempêtes d\'idées sont constantes et fertiles.',
             validationRules: "Toute idée doit récolter l'approbation d'au moins 3 clans d'ingénieurs différents pour être matérialisée.",
             lifecycle: 'Une idée non développée est réabsorbée par l\'atmosphère après 2 rotations.',
+            kpis: [{ name: 'Idées générées/session', value: '54' }],
             satellites: [
               { id: 's2-atelier-creatif', name: 'Lune des Ateliers Créatifs', description: 'Organise des sessions de créativité structurées.' },
               { id: 's2-boite-idees', name: 'Astéroïde "Boîte à Idées"', description: 'Capture les idées spontanées de tout l\'équipage.' },
@@ -40,6 +44,7 @@ const universeData = [
       }
     ]
   },
+  // ... (le reste des données reste identique mais pourrait aussi être enrichi de KPIs)
   // 2. Galaxie du Perfectionnement & Commercialisation
   {
     id: 'g2-market',
@@ -53,6 +58,7 @@ const universeData = [
         id: 'ss2-marketing',
         name: 'Système du Marketing Stratosphérique',
         description: 'Un système binaire où le produit et son marché tournent l\'un autour de l\'autre en parfaite harmonie.',
+        kpis: [{ name: 'Portée des campagnes', value: '3M d\'unités' }, { name: 'Taux d\'engagement', value: '4.5%' }],
         planets: [
           {
             id: 'p3-packaging',
@@ -224,243 +230,227 @@ document.addEventListener('DOMContentLoaded', () => {
     const infoPanel = document.getElementById('info-panel');
     const panelContent = document.getElementById('panel-content');
     const closePanelBtn = document.getElementById('close-panel');
-    const searchBar = document.getElementById('search-bar');
-    const searchResults = document.getElementById('search-results');
+    // Le reste est déclaré dans les fonctions pour la portée
 
-    function renderUniverse() {
-        // Vider le conteneur au cas où
-        container.innerHTML = '';
+    let viewState = {
+        level: 'universe', // 'universe', 'galaxy', 'system'
+        activeGalaxyId: null,
+        activeSystemId: null,
+    };
 
-        // Créer le conteneur SVG pour le chemin
+    // --- Fonctions de Rendu Principales ---
+
+    function render() {
+        container.innerHTML = ''; // Nettoyer la vue à chaque rendu
+        container.style.transform = ''; // Réinitialiser le zoom
+
+        // Gérer la visibilité du bouton retour
+        backButton.classList.toggle('hidden', viewState.level === 'universe');
+
+        switch (viewState.level) {
+            case 'system':
+                renderSystemView(viewState.activeGalaxyId, viewState.activeSystemId);
+                break;
+            case 'galaxy':
+                renderGalaxyView(viewState.activeGalaxyId);
+                break;
+            case 'universe':
+            default:
+                renderUniverseView();
+                break;
+        }
+    }
+
+    function renderUniverseView() {
         const svgNS = "http://www.w3.org/2000/svg";
         const svg = document.createElementNS(svgNS, 'svg');
-        svg.setAttribute('id', 'path-container');
-        svg.setAttribute('width', '100%');
-        svg.setAttribute('height', '100%');
-
+        svg.id = 'path-container';
+        Object.assign(svg.style, { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: -1 });
         const path = document.createElementNS(svgNS, 'path');
-        path.setAttribute('id', 'travel-path');
-
+        path.id = 'travel-path';
         svg.appendChild(path);
         container.appendChild(svg);
 
         const pathPoints = [];
-
-        // Afficher chaque galaxie
         universeData.forEach(galaxy => {
-            const galaxyEl = document.createElement('div');
-            galaxyEl.id = galaxy.id;
-            galaxyEl.className = 'galaxy';
-            galaxyEl.style.left = galaxy.position.x;
-            galaxyEl.style.top = galaxy.position.y;
-
-            const labelEl = document.createElement('div');
-            labelEl.className = 'galaxy-label';
-            labelEl.textContent = galaxy.name;
-            galaxyEl.appendChild(labelEl);
-
-            container.appendChild(galaxyEl);
-
+            const galaxyEl = createAndAppend('div', container, { id: galaxy.id, className: 'galaxy' }, { left: galaxy.position.x, top: galaxy.position.y });
+            createAndAppend('div', galaxyEl, { className: 'galaxy-label', textContent: galaxy.name });
+            galaxyEl.addEventListener('click', () => handleGalaxyClick(galaxy));
             if (galaxy.type === 'on-path') {
-                // Convertir les pourcentages en pixels pour le chemin SVG
                 const rect = container.getBoundingClientRect();
-                const x = parseFloat(galaxy.position.x) / 100 * rect.width;
-                const y = parseFloat(galaxy.position.y) / 100 * rect.height;
-                pathPoints.push({x, y});
+                pathPoints.push({ x: parseFloat(galaxy.position.x) / 100 * rect.width, y: parseFloat(galaxy.position.y) / 100 * rect.height });
             }
         });
+        drawPath(path, pathPoints);
+        startJourney();
+    }
 
-        // Dessiner le chemin
-        // Trier les points par coordonnée x pour s'assurer que le chemin va de gauche à droite
+    function renderGalaxyView(galaxyId) {
+        const galaxy = universeData.find(g => g.id === galaxyId);
+        if (!galaxy) return;
+
+        const count = galaxy.solarSystems.length;
+        galaxy.solarSystems.forEach((system, index) => {
+            const angle = (index / count) * 2 * Math.PI;
+            const radius = count > 1 ? 35 : 0; // Centre si un seul système
+            const x = 50 + radius * Math.cos(angle);
+            const y = 50 + radius * Math.sin(angle);
+
+            const systemEl = createAndAppend('div', container, { id: system.id, className: 'solar-system', textContent: system.name });
+            Object.assign(systemEl.style, { left: `${x}%`, top: `${y}%`, transform: 'translate(-50%, -50%)' });
+            systemEl.addEventListener('click', () => handleSystemClick(system));
+        });
+    }
+
+    function renderSystemView(galaxyId, systemId) {
+        const galaxy = universeData.find(g => g.id === galaxyId);
+        const system = galaxy?.solarSystems.find(s => s.id === systemId);
+        if (!system) return;
+
+        const count = system.planets.length;
+        system.planets.forEach((planet, index) => {
+            const angle = (index / count) * 2 * Math.PI;
+            const radius = 35;
+            const x = 50 + radius * Math.cos(angle);
+            const y = 50 + radius * Math.sin(angle);
+
+            const planetEl = createAndAppend('div', container, { id: planet.id, className: 'planet', textContent: planet.name });
+            Object.assign(planetEl.style, { left: `${x}%`, top: `${y}%`, transform: 'translate(-50%, -50%)', width: '80px', height: '80px' });
+            // planetEl.addEventListener('click', () => handlePlanetClick(planet));
+        });
+    }
+
+    // --- Gestionnaires de Clics et Transitions ---
+
+    function zoomAndPan(element, scale, targetLevel, stateUpdates) {
+        const rect = element.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        const translateX = (containerRect.width / 2) - rect.left - (rect.width / 2);
+        const translateY = (containerRect.height / 2) - rect.top - (rect.height / 2);
+        container.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+
+        setTimeout(() => {
+            Object.assign(viewState, { level: targetLevel, ...stateUpdates });
+            render();
+        }, 1000);
+    }
+
+    function handleGalaxyClick(galaxy) {
+        updateInfoPanel(galaxy);
+        zoomAndPan(document.getElementById(galaxy.id), 4, 'galaxy', { activeGalaxyId: galaxy.id });
+    }
+
+    function handleSystemClick(system) {
+        updateInfoPanel(system);
+        zoomAndPan(document.getElementById(system.id), 5, 'system', { activeSystemId: system.id });
+    }
+
+    // --- Fonctions Utilitaires ---
+
+    function createAndAppend(tag, parent, attributes = {}, styles = {}) {
+        const el = document.createElement(tag);
+        Object.assign(el, attributes);
+        Object.assign(el.style, styles);
+        parent.appendChild(el);
+        return el;
+    }
+
+    function drawPath(path, pathPoints) {
         pathPoints.sort((a, b) => a.x - b.x);
-
-        // Construire l'attribut 'd' pour le chemin SVG
-        let pathD = '';
-        if (pathPoints.length > 0) {
-            pathD = `M ${pathPoints[0].x} ${pathPoints[0].y}`;
-            for (let i = 1; i < pathPoints.length; i++) {
-                const p1 = pathPoints[i-1];
-                const p2 = pathPoints[i];
-                // Ajout de points de contrôle pour une courbe douce (Bézier cubique)
-                const cp1x = p1.x + (p2.x - p1.x) / 2;
-                const cp1y = p1.y;
-                const cp2x = p1.x + (p2.x - p1.x) / 2;
-                const cp2y = p2.y;
-                pathD += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
-            }
+        if (pathPoints.length === 0) return;
+        let pathD = `M ${pathPoints[0].x} ${pathPoints[0].y}`;
+        for (let i = 1; i < pathPoints.length; i++) {
+            const p1 = pathPoints[i-1], p2 = pathPoints[i];
+            const cp1x = p1.x + (p2.x - p1.x) / 2, cp1y = p1.y;
+            const cp2x = p1.x + (p2.x - p1.x) / 2, cp2y = p2.y;
+            pathD += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
         }
         path.setAttribute('d', pathD);
     }
 
     function startJourney() {
-        const ship = document.createElement('div');
-        ship.id = 'wikicovage';
-        container.appendChild(ship);
-
+        if (viewState.level !== 'universe') return;
+        const ship = createAndAppend('div', container, { id: 'wikicovage' });
         const path = document.getElementById('travel-path');
-        if (!path) return;
+        if (!path || path.getTotalLength() === 0) return;
 
         const pathLength = path.getTotalLength();
-
-        // Positionner le vaisseau au début avant de commencer l'animation
         const startPoint = path.getPointAtLength(0);
-        const nextPointForAngle = path.getPointAtLength(1);
-        const startAngle = Math.atan2(nextPointForAngle.y - startPoint.y, nextPointForAngle.x - startPoint.x);
-        ship.style.transform = `translate(${startPoint.x}px, ${startPoint.y}px) translate(-50%, -50%) rotate(${startAngle}rad)`;
-        let startTime = null;
-        const duration = 15000; // 15 secondes pour le voyage complet
+        const nextAnglePoint = path.getPointAtLength(1);
+        const startAngle = Math.atan2(nextAnglePoint.y - startPoint.y, nextAnglePoint.x - startPoint.x);
+        ship.style.transform = `translate(${startPoint.x}px, ${startPoint.y}px) rotate(${startAngle}rad)`;
 
+        let startTime = null;
+        const duration = 15000;
         function animate(timestamp) {
             if (!startTime) startTime = timestamp;
-            const elapsedTime = timestamp - startTime;
-
-            // Calculer la progression, en s'assurant qu'elle ne dépasse pas la durée
-            const progress = Math.min(elapsedTime / duration, 1);
-            const distance = progress * pathLength;
-
-            const point = path.getPointAtLength(distance);
-            const nextPoint = path.getPointAtLength(distance + 1 < pathLength ? distance + 1 : pathLength);
-
-            // Calculer l'angle de rotation
+            const progress = Math.min((timestamp - startTime) / duration, 1);
+            const point = path.getPointAtLength(progress * pathLength);
+            const nextPoint = path.getPointAtLength(progress * pathLength + 1);
             const angle = Math.atan2(nextPoint.y - point.y, nextPoint.x - point.x);
-
-            // Appliquer la transformation
-            ship.style.transform = `translate(${point.x}px, ${point.y}px) translate(-50%, -50%) rotate(${angle}rad)`;
-
-            // Continuer l'animation jusqu'à la fin
-            if (progress < 1) {
-                requestAnimationFrame(animate);
-            } else {
-                // Optionnel: faire quelque chose à la fin, comme faire clignoter le vaisseau
-                ship.style.boxShadow = '0 0 25px #ffdd00, 0 0 50px #ffffff';
-            }
+            ship.style.transform = `translate(${point.x}px, ${point.y}px) rotate(${angle}rad)`;
+            if (progress < 1) requestAnimationFrame(animate);
         }
-
         requestAnimationFrame(animate);
     }
 
-    // Lancer le rendu et l'animation
-    renderUniverse();
-    startJourney();
-    window.addEventListener('resize', () => {
-        renderUniverse();
-        startJourney();
-    });
-
-    // --- Logique d'interactivité ---
-
     function updateInfoPanel(data) {
-        let content = '';
-        // Détecte s'il s'agit d'une galaxie en vérifiant la présence de `solarSystems`
-        if (data.solarSystems) {
-            content = `
-                <h2 class="text-2xl font-bold text-cyan-400 mb-2">${data.name}</h2>
-                <p class="text-sm text-gray-400 mb-4">Galaxie / Macro-Processus</p>
-                <div class="mb-6">
-                    <h3 class="font-semibold mb-2 text-gray-200">Description Cosmique</h3>
-                    <p class="text-gray-300">${data.description}</p>
-                </div>
-                <div class="mb-6">
-                    <h3 class="font-semibold mb-2 text-gray-200">Valeur Apportée</h3>
-                    <p class="text-yellow-300 italic">"${data.valueProposition}"</p>
-                </div>
-            `;
+        let content = '', type = '';
+        if (data.solarSystems) { type = 'Galaxie / Macro-Processus'; }
+        else if (data.planets) { type = 'Système Solaire / Processus'; }
+        else if (data.satellites) { type = 'Planète / Sous-Processus'; }
+        else { type = 'Satellite'; }
+
+        content = `
+            <h2 class="text-2xl font-bold text-cyan-400 mb-2">${data.name}</h2>
+            <p class="text-sm text-gray-400 mb-4">${type}</p>
+            <div class="mb-6"><h3 class="font-semibold mb-2 text-gray-200">Description</h3><p class="text-gray-300">${data.description || 'Aucune description.'}</p></div>
+        `;
+        if (data.valueProposition) {
+            content += `<div class="mb-6"><h3 class="font-semibold mb-2 text-gray-200">Valeur Apportée</h3><p class="text-yellow-300 italic">"${data.valueProposition}"</p></div>`;
         }
-        // Des 'else if' pourront être ajoutés ici pour les systèmes, planètes, etc.
+        // Ajout de la section KPI
+        if (data.kpis && data.kpis.length > 0) {
+            let kpiList = data.kpis.map(kpi => {
+                const color = Math.random() < 0.6 ? 'bg-green-500' : 'bg-red-500'; // 60% chance d'être vert
+                return `<li class="flex items-center justify-between bg-gray-800 p-2 rounded-md">
+                          <span class="flex items-center">
+                            <span class="kpi-indicator mr-3 ${color}"></span>
+                            <span class="text-gray-300">${kpi.name}</span>
+                          </span>
+                          <span class="font-semibold text-white">${kpi.value}</span>
+                        </li>`;
+            }).join('');
+            content += `<div class="mb-6">
+                          <h3 class="font-semibold mb-2 text-gray-200">Indicateurs de Performance</h3>
+                          <ul class="space-y-2">${kpiList}</ul>
+                        </div>`;
+        }
 
         panelContent.innerHTML = content;
         infoPanel.classList.add('visible');
     }
 
-    // Ajout des listeners sur les galaxies
-    document.querySelectorAll('.galaxy').forEach(galaxyEl => {
-        galaxyEl.addEventListener('click', () => {
-            const galaxyData = universeData.find(g => g.id === galaxyEl.id);
-            if (galaxyData) {
-                document.querySelectorAll('.galaxy.highlight').forEach(el => el.classList.remove('highlight'));
-                galaxyEl.classList.add('highlight');
-                updateInfoPanel(galaxyData);
-            }
-        });
-    });
+    closePanelBtn.addEventListener('click', () => infoPanel.classList.remove('visible'));
 
-    closePanelBtn.addEventListener('click', () => {
-        infoPanel.classList.remove('visible');
-        document.querySelectorAll('.galaxy.highlight').forEach(el => el.classList.remove('highlight'));
-    });
+    // --- Lancement Initial & Gestionnaires d'événements globaux ---
+    const backButton = document.getElementById('back-button');
 
-
-    // --- Logique de la recherche ---
-    searchBar.addEventListener('input', (e) => {
-        const query = e.target.value.toLowerCase().trim();
-        document.querySelectorAll('.highlight').forEach(el => el.classList.remove('highlight'));
-
-        if (query.length < 2) {
-            searchResults.innerHTML = '';
-            searchResults.classList.add('hidden');
-            return;
+    function navigateBack() {
+        if (viewState.level === 'system') {
+            viewState.level = 'galaxy';
+            viewState.activeSystemId = null;
+        } else if (viewState.level === 'galaxy') {
+            viewState.level = 'universe';
+            viewState.activeGalaxyId = null;
         }
-
-        const results = [];
-        universeData.forEach(galaxy => {
-            const context = { galaxy };
-            if (galaxy.name.toLowerCase().includes(query)) {
-                results.push({ type: 'Galaxie', name: galaxy.name, elementId: galaxy.id, data: context });
-            }
-            galaxy.solarSystems.forEach(system => {
-                context.system = system;
-                if (system.name.toLowerCase().includes(query)) {
-                    results.push({ type: 'Système Solaire', name: system.name, context: galaxy.name, elementId: galaxy.id, data: context });
-                }
-                system.planets.forEach(planet => {
-                    context.planet = planet;
-                    if (planet.name.toLowerCase().includes(query)) {
-                        results.push({ type: 'Planète', name: planet.name, context: `${galaxy.name} > ${system.name}`, elementId: galaxy.id, data: context });
-                    }
-                    planet.satellites.forEach(satellite => {
-                        if (satellite.name.toLowerCase().includes(query)) {
-                             results.push({ type: 'Satellite', name: satellite.name, context: `${system.name} > ${planet.name}`, elementId: galaxy.id, data: context });
-                        }
-                    });
-                });
-            });
-        });
-        displaySearchResults(results);
-    });
-
-    function displaySearchResults(results) {
-        if (results.length === 0) {
-            searchResults.innerHTML = '<div class="p-3 text-gray-400">Aucun résultat</div>';
-            searchResults.classList.remove('hidden');
-            return;
-        }
-        searchResults.innerHTML = results
-            .map((r, i) => `
-                <div class="p-3 hover:bg-gray-800 cursor-pointer border-b border-gray-700 search-result-item" data-result-index="${i}">
-                    <p class="font-semibold text-white">${r.name}</p>
-                    <p class="text-xs text-gray-400">${r.type} ${r.context ? `(${r.context})` : ''}</p>
-                </div>
-            `)
-            .join('');
-
-        document.querySelectorAll('.search-result-item').forEach(item => {
-            item.addEventListener('click', (e) => {
-                const result = results[e.currentTarget.dataset.resultIndex];
-                const galaxyEl = document.getElementById(result.elementId);
-
-                if (galaxyEl) {
-                    document.querySelectorAll('.galaxy.highlight').forEach(el => el.classList.remove('highlight'));
-                    galaxyEl.classList.add('highlight');
-                    // Pour l'instant, on affiche toujours l'info de la galaxie parente.
-                    // La logique de drill-down affinera cela.
-                    updateInfoPanel(result.data.galaxy);
-                }
-
-                searchResults.classList.add('hidden');
-                searchBar.value = result.name;
-            });
-        });
-
-        searchResults.classList.remove('hidden');
+        infoPanel.classList.remove('visible'); // Cacher le panneau en remontant
+        render();
     }
+
+    backButton.addEventListener('click', navigateBack);
+    closePanelBtn.addEventListener('click', () => infoPanel.classList.remove('visible'));
+    window.addEventListener('resize', render);
+
+    render(); // Lancement initial
 });
