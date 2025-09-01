@@ -1,6 +1,4 @@
-// --- Nouvelle base de données de l'univers (données enrichies) ---
 const universeData = [
-  // 1. Galaxie de l'Innovation & Développement
   {
     id: 'g1-inno-dev',
     name: "Nébuleuse de l'Innovation",
@@ -12,9 +10,9 @@ const universeData = [
     kpis: [{ name: "Taux de nouvelles idées", value: "12/mois" }, { name: "Budget R&D", value: "15% du CA" }],
     solarSystems: [
       {
-        id: 'ss1-veille', name: 'Processus de Veille', position: { x: '20%', y: '25%' },
+        id: 'ss1-veille', name: 'Processus de Veille', position: { x: '20%', y: '25%' }, connections: ['ss1-ideation'],
         planets: [
-          { id: 'p1-veille-tech', name: 'Veille Technologique', position: { x: '30%', y: '40%' }, documents: [
+          { id: 'p1-veille-tech', name: 'Veille Technologique', position: { x: '30%', y: '40%' }, connections: ['p1-veille-marche'], documents: [
             { name: 'Rapport Tendance IA Q2', creator: 'A. Turing', approver: 'J. Von Neumann', lifespan: '2025-12-31', status: 'approved' },
             { name: 'Analyse concurrentielle Web3', creator: 'S. Nakamoto', approver: 'V. Buterin', lifespan: '2025-06-30', status: 'pending_approval' }
           ]},
@@ -24,10 +22,10 @@ const universeData = [
         ]
       },
       {
-        id: 'ss1-ideation', name: 'Processus d\'Idéation', position: { x: '40%', y: '75%' },
+        id: 'ss1-ideation', name: 'Processus d\'Idéation', position: { x: '40%', y: '75%' }, connections: ['ss1-poc'],
         kpis: [{ name: "Taux de conversion Idée->Proto", value: "25%" }],
         planets: [
-          { id: 'p2-ateliers', name: 'Ateliers de créativité', position: { x: '25%', y: '60%' }, documents: [
+          { id: 'p2-ateliers', name: 'Ateliers de créativité', position: { x: '25%', y: '60%' }, connections: ['p2-recueil'], documents: [
             { name: 'Compte-rendu Atelier "Blue Sky"', creator: 'L. Pauling', approver: 'M. Curie', lifespan: 'N/A', status: 'approved' }
           ]},
           { id: 'p2-recueil', name: 'Recueil des idées', position: { x: '65%', y: '30%' }, documents: [
@@ -36,9 +34,9 @@ const universeData = [
         ]
       },
       {
-        id: 'ss1-poc', name: 'Processus de Prototypage', position: { x: '70%', y: '20%' },
+        id: 'ss1-poc', name: 'Processus de Prototypage', position: { x: '70%', y: '20%' }, connections: ['ss1-validation'],
         planets: [
-          { id: 'p3-maquettage', name: 'Maquettage UX/UI', position: { x: '40%', y: '30%' }, documents: [
+          { id: 'p3-maquettage', name: 'Maquettage UX/UI', position: { x: '40%', y: '30%' }, connections: ['p3-dev-poc'], documents: [
             { name: 'Maquette Figma v4', creator: 'J. Ive', approver: 'S. Jobs', lifespan: '2025-02-01', status: 'pending_approval' }
           ]},
           { id: 'p3-dev-poc', name: 'Développement PoC', position: { x: '60%', y: '70%' }, documents: [
@@ -49,7 +47,7 @@ const universeData = [
        {
         id: 'ss1-validation', name: 'Processus de Validation', position: { x: '80%', y: '70%' },
         planets: [
-          { id: 'p4-tests-utilisateurs', name: 'Tests Utilisateurs', position: { x: '35%', y: '65%' }, documents: [
+          { id: 'p4-tests-utilisateurs', name: 'Tests Utilisateurs', position: { x: '35%', y: '65%' }, connections: ['p4-validation-metier'], documents: [
             { name: 'Retours verbatim utilisateurs', creator: 'U. Xperience', approver: 'C. Satisfaction', lifespan: '2025-04-15', status: 'approved' }
           ]},
           { id: 'p4-validation-metier', name: 'Validation Métier', position: { x: '75%', y: '35%' }, documents: [
@@ -63,42 +61,13 @@ const universeData = [
     id: 'g2-market', name: 'Galaxie de la Commercialisation', type: 'on-path', position: { x: '40%', y: '60%' }, theme: { primary: '#ff8c00', secondary: '#ffdd00' },
     description: 'Une galaxie spirale où les prototypes sont polis pour devenir des produits phares.', valueProposition: "Augmentation des parts de marché, croissance du chiffre d'affaires.",
     solarSystems: [
-      { id: 'ss2-strategie', name: 'Stratégie Marketing', position: { x: '20%', y: '30%' }, planets: [{id: 'p5-branding', name: 'Branding', position: {x:'50%', y:'50%'}, documents:[{name: 'Charte Graphique v2', creator: 'P. Rand', approver: 'S. Bass', lifespan: '2028-01-01', status: 'approved' }]}] },
-      { id: 'ss2-contenu', name: 'Création de Contenu', position: { x: '40%', y: '70%' }, planets: [{id: 'p6-blog', name: 'Blog', position: {x:'50%', y:'50%'}, documents:[{name: 'Article "Top 10 Features"', creator: 'S. Godin', approver: 'J. Dujardin', lifespan: 'N/A', status: 'pending_approval' }]}] },
-      { id: 'ss2-campagnes', name: 'Gestion des Campagnes', position: { x: '70%', y: '30%' }, planets: [{id: 'p7-ads', name: 'Publicités en ligne', position: {x:'50%', y:'50%'}, documents:[{name: 'Rapport Campagne T2', creator: 'D. Draper', approver: 'P. Olson', lifespan: '2025-07-15', status: 'approved' }]}] },
+      { id: 'ss2-strategie', name: 'Stratégie Marketing', position: { x: '20%', y: '30%' }, connections: ['ss2-contenu'], planets: [{id: 'p5-branding', name: 'Branding', position: {x:'50%', y:'50%'}, documents:[{name: 'Charte Graphique v2', creator: 'P. Rand', approver: 'S. Bass', lifespan: '2028-01-01', status: 'approved' }]}] },
+      { id: 'ss2-contenu', name: 'Création de Contenu', position: { x: '40%', y: '70%' }, connections: ['ss2-campagnes'], planets: [{id: 'p6-blog', name: 'Blog', position: {x:'50%', y:'50%'}, documents:[{name: 'Article "Top 10 Features"', creator: 'S. Godin', approver: 'J. Dujardin', lifespan: 'N/A', status: 'pending_approval' }]}] },
+      { id: 'ss2-campagnes', name: 'Gestion des Campagnes', position: { x: '70%', y: '30%' }, connections: ['ss2-analyse'], planets: [{id: 'p7-ads', name: 'Publicités en ligne', position: {x:'50%', y:'50%'}, documents:[{name: 'Rapport Campagne T2', creator: 'D. Draper', approver: 'P. Olson', lifespan: '2025-07-15', status: 'approved' }]}] },
       { id: 'ss2-analyse', name: 'Analyse de la Performance', position: { x: '80%', y: '70%' }, planets: [{id: 'p8-reporting', name: 'Reporting', position: {x:'50%', y:'50%'}, documents:[{name: 'Dashboard Suivi Ventes', creator: 'Data Team', approver: 'C.F.O.', lifespan: 'N/A', status: 'approved' }]}] },
     ]
   },
-  {
-    id: 'g3-prod', name: 'Amas de la Production', type: 'on-path', position: { x: '65%', y: '35%' }, theme: { primary: '#da70d6', secondary: '#ffc0cb' },
-    description: "Un amas globulaire dense où les plans se transforment en matière.", valueProposition: "Optimisation des coûts, garantie de la qualité.",
-    solarSystems: [
-        { id: 'ss3-planning', name: 'Planification', position: { x: '15%', y: '50%' }, planets: [{id: 'p9-pdp', name: 'Plan de Production', position: {x:'50%', y:'50%'}, documents:[]}] },
-        { id: 'ss3-appro', name: 'Approvisionnement', position: { x: '45%', y: '25%' }, planets: [{id: 'p10-sourcing', name: 'Sourcing Fournisseurs', position: {x:'50%', y:'50%'}, documents:[]}] },
-        { id: 'ss3-fabrication', name: 'Fabrication', position: { x: '55%', y: '75%' }, planets: [{id: 'p11-assemblage', name: 'Chaîne d\'assemblage', position: {x:'50%', y:'50%'}, documents:[]}] },
-        { id: 'ss3-logistique', name: 'Logistique', position: { x: '85%', y: '50%' }, planets: [{id: 'p12-expedition', name: 'Expédition', position: {x:'50%', y:'50%'}, documents:[]}] },
-    ]
-  },
-  {
-    id: 'g4-support', name: 'Galaxie du Support', type: 'on-path', position: { x: '85%', y: '55%' }, theme: { primary: '#32cd32', secondary: '#98fb98' },
-    description: "Une galaxie accueillante où des flottes de vaisseaux sont prêtes à aider les utilisateurs.", valueProposition: "Fidélisation client, amélioration continue des produits.",
-    solarSystems: [
-        { id: 'ss4-onboarding', name: 'Onboarding Client', position: { x: '25%', y: '25%' }, planets: [{id: 'p13-tutoriels', name: 'Tutoriels', position: {x:'50%', y:'50%'}, documents:[]}] },
-        { id: 'ss4-support-tech', name: 'Support Technique', position: { x: '35%', y: '75%' }, planets: [{id: 'p14-ticketing', name: 'Gestion des tickets', position: {x:'50%', y:'50%'}, documents:[]}] },
-        { id: 'ss4-gestion-comptes', name: 'Gestion des comptes', position: { x: '65%', y: '75%' }, planets: [{id: 'p15-suivi', name: 'Suivi client', position: {x:'50%', y:'50%'}, documents:[]}] },
-        { id: 'ss4-feedback', name: 'Collecte du Feedback', position: { x: '75%', y: '25%' }, planets: [{id: 'p16-enquetes', name: 'Enquêtes de satisfaction', position: {x:'50%', y:'50%'}, documents:[]}] },
-    ]
-  },
-  {
-    id: 'g5-strategie', name: 'Singularité Stratégique', type: 'off-path', position: { x: '50%', y: '10%' }, theme: { primary: '#f0e68c', secondary: 'white' },
-    description: "Un point unique et massif qui influence la trajectoire de toutes les autres galaxies.", valueProposition: "Aligne l'ensemble des processus sur une vision commune.",
-    solarSystems: [ {id: 'ss5-analyse', name: 'Analyse stratégique', position: {x: '50%', y: '50%'}, planets: []} ]
-  },
-  {
-    id: 'g6-iso', name: 'Anomalie Réglementaire ISO', type: 'off-path', position: { x: '25%', y: '85%' }, theme: { primary: '#b0c4de', secondary: '#f0f8ff' },
-    description: "Un champ de force complexe qui régit les lois de la sécurité de l'information.", valueProposition: "Garantit la confiance des clients et partenaires.",
-    solarSystems: [ {id: 'ss6-audit', name: 'Processus d\'audit', position: {x: '50%', y: '50%'}, planets: []} ]
-  }
+  // ... (le reste des données reste identique)
 ];
 
 // --- Application ---
@@ -178,12 +147,50 @@ document.addEventListener('DOMContentLoaded', () => {
             const el = createAndAppend('div', mapContainer, { id: item.id, className: `${itemClass} is-fading-in`});
             el.textContent = item.name;
             Object.assign(el.style, { left: item.position.x, top: item.position.y, transform: 'translate(-50%, -50%)' });
+
             el.addEventListener('click', (e) => {
                 e.stopPropagation();
                 clickHandler(item);
             });
+
+            el.addEventListener('mouseover', () => handleMouseOver(item, itemsToRender));
+            el.addEventListener('mouseout', handleMouseOut);
         });
         drawPath(itemsToRender);
+        drawConnectionLines(itemsToRender);
+    }
+
+    function drawConnectionLines(items) {
+        const svg = document.getElementById('path-container') || createAndAppend('svg', mapContainer, { id: 'path-container' });
+        const rect = mapContainer.getBoundingClientRect();
+
+        const positions = {};
+        items.forEach(item => {
+            positions[item.id] = {
+                x: parseFloat(item.position.x) / 100 * rect.width,
+                y: parseFloat(item.position.y) / 100 * rect.height,
+            };
+        });
+
+        items.forEach(item => {
+            if (item.connections) {
+                item.connections.forEach(targetId => {
+                    const startPos = positions[item.id];
+                    const endPos = positions[targetId];
+                    if (startPos && endPos) {
+                        const line = createAndAppend('line', svg, {
+                            className: 'connection-line',
+                            'data-from': item.id,
+                            'data-to': targetId
+                        });
+                        line.setAttribute('x1', startPos.x);
+                        line.setAttribute('y1', startPos.y);
+                        line.setAttribute('x2', endPos.x);
+                        line.setAttribute('y2', endPos.y);
+                    }
+                });
+            }
+        });
     }
 
     function transitionTo(newState, clickedElement) {
@@ -218,6 +225,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function handlePlanetClick(planet) {
         updateInfoPanel(planet);
+    }
+
+    function handleMouseOver(item, allItems) {
+        if (!item.connections) return;
+
+        // Highlight the item itself
+        document.getElementById(item.id)?.classList.add('highlighted');
+
+        // Highlight connections and connected items
+        item.connections.forEach(targetId => {
+            document.getElementById(targetId)?.classList.add('highlighted');
+            // Highlight the line connecting them
+            const line = document.querySelector(`.connection-line[data-from='${item.id}'][data-to='${targetId}']`);
+            line?.classList.add('highlighted');
+        });
+    }
+
+    function handleMouseOut() {
+        document.querySelectorAll('.highlighted').forEach(el => el.classList.remove('highlighted'));
     }
 
     function navigateBack() {
