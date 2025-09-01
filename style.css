@@ -65,6 +65,12 @@ body {
     fill: none;
     animation: dash 60s linear infinite;
 }
+
+.connection-line {
+    stroke: rgba(255, 255, 255, 0.3);
+    stroke-width: 1px;
+    stroke-dasharray: 4 4;
+}
 @keyframes dash {
   to { stroke-dashoffset: -1000; }
 }
@@ -132,6 +138,18 @@ body {
     transform: scale(1.1) translate(-50%, -50%);
 }
 
+/* --- Interactivité de survol --- */
+.connection-line.highlighted {
+    stroke: var(--theme-secondary);
+    opacity: 0.9;
+    stroke-width: 1.5px;
+}
+
+.highlighted {
+    filter: brightness(1.5);
+    box-shadow: 0 0 25px var(--theme-secondary);
+}
+
 /* --- Animations de transition --- */
 .is-fading-out {
     opacity: 0;
@@ -185,49 +203,4 @@ body {
     0% { box-shadow: 0 0 20px 5px var(--theme-secondary), 0 0 30px 10px var(--theme-secondary) inset; }
     50% { box-shadow: 0 0 30px 10px var(--theme-secondary), 0 0 40px 15px var(--theme-secondary) inset; }
     100% { box-shadow: 0 0 20px 5px var(--theme-secondary), 0 0 30px 10px var(--theme-secondary) inset; }
-}
-
-/* --- Panneau d'information --- */
-.kpi-indicator {
-    display: inline-block;
-    width: 10px;
-    height: 10px;
-    border-radius: 9999px;
-    flex-shrink: 0;
-}
-#info-panel {
-    transition: transform 0.5s ease-in-out;
-    transform: translateX(100%);
-}
-.document-item {
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-}
-.document-item:hover {
-    background-color: #2d3748; /* gray-800 */
-}
-.document-details {
-    display: none;
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid #4a5568; /* gray-600 */
-    font-size: 12px;
-    color: #a0aec0; /* gray-400 */
-}
-.document-item.expanded .document-details {
-    display: block;
-}
-#info-panel.visible {
-    transform: translateX(0);
-}
-
-/* --- Styles pour la recherche --- */
-.highlight {
-    box-shadow: 0 0 20px 5px #00aaff, 0 0 30px 10px #00aaff inset;
-    animation: pulse 2s infinite;
-}
-@keyframes pulse {
-    0% { box-shadow: 0 0 20px 5px #00aaff, 0 0 30px 10px #00aaff inset; }
-    50% { box-shadow: 0 0 30px 10px #00aaff, 0 0 40px 15px #00aaff inset; }
-    100% { box-shadow: 0 0 20px 5px #00aaff, 0 0 30px 10px #00aaff inset; }
 }
