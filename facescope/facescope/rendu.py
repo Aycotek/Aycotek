@@ -268,7 +268,7 @@ def rendre(m: Mesures, s: Signaux, sortie: str, titre: str, passage: tuple | Non
             d.text((x + d.textlength(nom + " ", font=f12), 980),
                    f"{g:.1f}".replace(".", ",") if np.isfinite(g) else "-",
                    font=police(14, True), fill=couleur(g))
-            x += 124
+            x += 492 // len(s.groupes)
         if etiquette[i]:
             d.text((PX0, 1022), etiquette[i], font=f13, fill=BLEU if fige[i] else AMBRE)
 

@@ -11,6 +11,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from . import audio as voix
+from . import parole
 from .analyse import Mesures
 
 # Unités d'action FACS approchées à partir des coefficients MediaPipe.
@@ -70,6 +71,10 @@ class Signaux:
     vitesse_tete: np.ndarray   # degrés par seconde
     z_mobilite: np.ndarray     # mobilité du haut du visage par rapport à l'habitude
     figements: list            # passages où tête et visage bougent nettement moins
+    debit: np.ndarray          # mots par seconde (NaN sans transcription)
+    pause: np.ndarray          # durée du silence en cours, en secondes
+    convergences: list         # passages où au moins deux familles s'écartent ensemble
+    transcription: dict | None
     largeur_visage: float      # largeur médiane du visage en pixels
     clignements: np.ndarray    # par minute, fenêtre de 10 s
     f0: np.ndarray             # Hz quand la personne parle
@@ -140,7 +145,8 @@ def _pics(x, separation, nb_max, seuil) -> list:
     return sorted(choisis)
 
 
-def calculer(m: Mesures, audio: dict | None = None, base: tuple | None = None) -> Signaux:
+def calculer(m: Mesures, audio: dict | None = None, base: tuple | None = None,
+             transcription: dict | None = None) -> Signaux:
     n, fps = m.n, m.fps
     col = {nom: i for i, nom in enumerate(m.noms_bs)}
 
@@ -255,6 +261,19 @@ def calculer(m: Mesures, audio: dict | None = None, base: tuple | None = None) -
     z_f0, f0_base = _z(f0, ref, 8.0)
     z_db, _ = _z(db_parle, ref, 2.0)
 
+    # Parole : débit, silences et hésitations, comparés à l'habitude de la personne.
+    debit, pause, hesitations = parole.sur_images(transcription, m.t)
+    ref_son = np.ones(n, bool) if not base else (m.t >= base[0]) & (m.t <= base[1])
+    with np.errstate(invalid="ignore"):
+        z_debit, debit_base = _z(np.where(debit > 0, debit, np.nan), ref_son, 0.3)
+    z_hesit, _ = _z(hesitations, ref_son, 3.0)
+    sil = parole.silences(transcription)
+    z_pause = np.full(n, np.nan)
+    if sil.size >= 5:
+        med = float(np.median(sil))
+        ech = max(1.4826 * float(np.median(np.abs(sil - med))), 0.2)
+        z_pause = np.where(pause > 0, (pause - med) / ech, 0.0)
+
     visage = [z_au[:, k] for k, c in enumerate(CODES) if c not in HORS_VISAGE]
     groupes = {
         "Visage": _rms(visage),
@@ -262,6 +281,8 @@ def calculer(m: Mesures, audio: dict | None = None, base: tuple | None = None) -
         "Regard": _rms([z_regard, z_clign]),
         "Voix": _rms([z_f0, z_db]),
     }
+    if transcription:
+        groupes["Parole"] = _rms([z_debit, z_pause, z_hesit])
     ecart = _rms(list(groupes.values()))
     ecart[~np.isfinite(groupes["Visage"]) | ~ok] = np.nan
 
@@ -277,7 +298,27 @@ def calculer(m: Mesures, audio: dict | None = None, base: tuple | None = None) -
     details += [("Mouvements de tête", z_tete), ("Mobilité du haut du visage", z_mobilite),
                 ("Regard détourné", z_regard),
                 ("Clignements", z_clign), ("Hauteur de la voix", z_f0),
-                ("Énergie de la voix", z_db)]
+                ("Énergie de la voix", z_db), ("Débit de parole", z_debit),
+                ("Silence", z_pause), ("Hésitations", z_hesit)]
+
+    # Écart simultané sur au moins deux familles pendant au moins une seconde.
+    hautes = np.stack([np.nan_to_num(g, nan=0.0) > SEUIL_MOMENT for g in groupes.values()])
+    ensemble = ok & (hautes.sum(axis=0) >= 2)
+    noms_familles = list(groupes)
+    convergences, i = [], 0
+    while i < n:
+        if not ensemble[i]:
+            i += 1
+            continue
+        j = i
+        while j < n and ensemble[j]:
+            j += 1
+        if j - i >= fps:
+            canaux = [noms_familles[k] for k in range(len(noms_familles))
+                      if hautes[k, i:j].mean() >= 0.5]
+            convergences.append({"image": i, "fin": j, "t": float(m.t[i]),
+                                 "duree": (j - i) / fps, "canaux": canaux})
+        i = j
     moments = []
     for i in _pics(ecart, int(3 * fps), 8, SEUIL_MOMENT):
         forts = sorted(((nom, float(z[i])) for nom, z in details if np.isfinite(z[i])),
@@ -317,10 +358,14 @@ def calculer(m: Mesures, audio: dict | None = None, base: tuple | None = None) -
         "parle_pct": round(100.0 * (parle & ok).sum() / max(ok.sum(), 1), 1),
         "clignements_par_min": None if not np.isfinite(clign_base) else round(clign_base, 1),
         "hauteur_voix_hz": None if not np.isfinite(f0_base) else round(f0_base, 1),
+        "debit_mots_par_seconde": None if not np.isfinite(debit_base)
+        else round(debit_base, 2),
     }
     return Signaux(ok=ok, au=au, intensite=intensite, z_au=z_au, expressions=expressions,
                    parle=parle, vitesse_tete=vitesse_tete, z_mobilite=z_mobilite,
-                   figements=figements, clignements=clignements, f0=f0,
+                   figements=figements, debit=debit, pause=pause,
+                   convergences=convergences, transcription=transcription,
+                   clignements=clignements, f0=f0,
                    largeur_visage=float(np.nanmedian(largeur_visage)) if m.valide.any()
                    else float("nan"),
                    db=db, groupes=groupes, ecart=ecart, percentile=percentile,

@@ -26,6 +26,8 @@ python -m facescope interview.mp4
 python -m facescope interview.mp4 --debut 2:00 --duree 1:30     # un extrait
 python -m facescope interview.mp4 --base 0:10-0:40              # passage calme de référence
 python -m facescope interview.mp4 --rendu 7:00-8:00             # analyse tout, ne rend qu'un passage
+python -m facescope interview.mp4 --format vertical             # rendu 9:16 pour les réseaux sociaux
+python -m facescope interview.mp4 --format vertical --analyse analyse.json
 ```
 
 Trois fichiers sont créés dans `resultats/` :
@@ -33,7 +35,8 @@ Trois fichiers sont créés dans `resultats/` :
 | Fichier | Contenu |
 |---|---|
 | `*_facescope.mp4` | La vidéo annotée (1920 x 1080, son d'origine) |
-| `*_rapport.json` | Moments atypiques, mouvements brefs, ligne de base, limites |
+| `*_facescope_vertical.mp4` | Avec `--format vertical` : 1080 x 1920, vidéo au centre, mesures et analyse autour |
+| `*_rapport.json` | Moments atypiques, figements, écarts simultanés, transcription, lexique, limites |
 | `*_mesures.csv` | Toutes les mesures, une ligne par image |
 
 Compter environ deux fois la durée de la vidéo (mesuré : 45 s traitées en 1 min 30 sur 4 cœurs).
@@ -50,9 +53,32 @@ Compter environ deux fois la durée de la vidéo (mesuré : 45 s traitées en 1 
 4. **Muscles.** 52 coefficients par image (MediaPipe Face Landmarker), regroupés en
    17 unités d'action proches du système FACS.
 5. **Voix.** Hauteur et énergie, comptées seulement quand la personne suivie parle.
-6. **Écart.** Chaque signal est comparé à la médiane de la personne dans la vidéo
+6. **Parole.** Transcription horodatée (modèle Whisper, 1,6 Go téléchargés au premier
+   lancement), puis débit, silences et hésitations. Le rapport donne aussi le lexique :
+   mots fréquents, pronoms, négations, phrases qui citent un chiffre.
+7. **Écart.** Chaque signal est comparé à la médiane de la personne dans la vidéo
    (ou dans le passage `--base`). L'indice vaut environ 1 quand tout est habituel ;
    au-dessus de 2, le moment est signalé.
+
+Un **écart simultané** est signalé quand au moins deux familles (visage, mobilité, regard,
+voix, parole) dépassent 2 en même temps pendant au moins une seconde.
+
+## Le fichier d'analyse
+
+L'outil mesure ; il ne juge pas le fond. L'analyse du discours et la vérification des faits
+se rédigent à part, dans un fichier JSON que le rendu vertical affiche au bon moment :
+
+```json
+{"elements": [
+  {"debut": 95, "fin": 108, "verdict": "imprécis", "titre": "Chiffre cité",
+   "texte": "Ce que dit la personne, puis ce que disent les sources.",
+   "source": "Nom de la source, date"}
+]}
+```
+
+`debut` et `fin` sont en secondes. Verdicts reconnus : exact (vert), inexact (rouge),
+trompeur, imprécis, contesté, à nuancer, partiel, incohérence (orange), non vérifiable
+(gris). Tout autre mot (discours, lexique…) s'affiche en bleu.
 
 ## Lire l'encadré
 
@@ -84,13 +110,16 @@ Compter environ deux fois la durée de la vidéo (mesuré : 45 s traitées en 1 
   1080p pour une mesure fine.
 - La précision des mesures n'a pas été comparée à un codage humain. Les seuils (écart,
   figement) sont réglés à la main sur quelques vidéos, pas appris sur des données annotées.
-- Pas encore de transcription ni de vérification des affirmations.
+- La transcription automatique efface souvent les « euh » : les hésitations sont
+  sous-comptées. Elle peut aussi se tromper sur un mot ou un chiffre.
+- L'outil ne vérifie pas les faits lui-même : il affiche l'analyse qu'on lui fournit.
 
 ## Suite prévue
 
 1. Reconnaître qui est qui d'un plan à l'autre (ligne de base par personne).
-2. Transcrire la parole et aligner le texte sur les moments atypiques.
-3. Extraire les affirmations vérifiables et les confronter à des sources.
+2. Produire le fichier d'analyse automatiquement (extraction des affirmations, recherche
+   de sources), avec relecture humaine avant publication.
+3. Mesurer la précision sur des extraits annotés par des humains.
 
 ## Crédits
 
