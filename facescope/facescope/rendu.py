@@ -10,7 +10,8 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 from .analyse import Mesures
-from .signaux import AFFICHEES, CODES, EXPRESSIONS, SEUIL_BREF, SEUIL_MOMENT, UNITES, Signaux
+from .signaux import (AFFICHEES, CODES, EXPRESSIONS, LARGEUR_FIABLE, SEUIL_BREF, SEUIL_MOMENT,
+                      UNITES, Signaux)
 
 L, H = 1920, 1080
 VX, VY, VL, VH = 0, 56, 1380, 776          # zone de la vidéo
@@ -21,6 +22,7 @@ ZOOM_PX = 240
 FOND, PANNEAU, TRAIT = (14, 17, 22), (21, 26, 33), (44, 51, 62)
 TEXTE, DISCRET = (230, 234, 240), (139, 149, 165)
 VERT, AMBRE, ROUGE = (63, 184, 175), (242, 181, 68), (229, 96, 77)
+BLEU = (96, 165, 250)
 AVERTISSEMENT = ("Cet outil mesure des mouvements. Il n'indique pas si la personne ment "
                  "ni ce qu'elle pense.")
 
@@ -96,7 +98,7 @@ def _fond(m: Mesures, s: Signaux, titre: str) -> Image.Image:
     # Courbe d'écart sur toute la durée.
     d.text((CX0, 846), "ÉCART À SA LIGNE DE BASE AU FIL DE LA VIDÉO",
            font=police(13, True), fill=TEXTE)
-    _droite(d, CX1, 847, "▲ moments les plus atypiques     ┆ changements de plan",
+    _droite(d, CX1, 847, "▲ moments atypiques     ▬ figement     ┆ changements de plan",
             police(12), DISCRET)
     d.rectangle([CX0, CY0, CX1, CY1], fill=PANNEAU)
     n, larg = m.n, CX1 - CX0
@@ -123,6 +125,9 @@ def _fond(m: Mesures, s: Signaux, titre: str) -> Image.Image:
         a, b = colonnes[x], colonnes[x + 1]
         if np.isfinite(a) and np.isfinite(b):
             d.line([CX0 + x, y_de(a), CX0 + x + 1, y_de(b)], fill=couleur(max(a, b)), width=2)
+    for f in s.figements:
+        d.rectangle([CX0 + larg * f["image"] / max(n - 1, 1), CY1 - 5,
+                     CX0 + larg * f["fin"] / max(n - 1, 1), CY1], fill=BLEU)
     for k, mo in enumerate(s.moments):
         x = CX0 + larg * mo["image"] / max(n - 1, 1)
         d.polygon([(x - 6, CY0 - 2), (x + 6, CY0 - 2), (x, CY0 + 8)], fill=AMBRE)
@@ -137,7 +142,10 @@ def _fond(m: Mesures, s: Signaux, titre: str) -> Image.Image:
     return img
 
 
-def rendre(m: Mesures, s: Signaux, sortie: str, titre: str) -> None:
+def rendre(m: Mesures, s: Signaux, sortie: str, titre: str, passage: tuple | None = None) -> None:
+    """Écrit la vidéo annotée. `passage` = (image de début, image de fin) pour n'en rendre
+    qu'une partie : la courbe du bas et la ligne de base portent toujours sur tout l'extrait."""
+    i0, i1 = passage or (0, m.n)
     statique = _fond(m, s, titre)
     ech = min(VL / m.largeur, VH / m.hauteur)
     vl, vh = int(m.largeur * ech) // 2 * 2, int(m.hauteur * ech) // 2 * 2
@@ -149,22 +157,29 @@ def rendre(m: Mesures, s: Signaux, sortie: str, titre: str) -> None:
         txt = f"Mouvement bref : {b['code']} {b['nom']} ({b['duree']:.2f} s)".replace(".", ",")
         for i in range(b["image"], min(m.n, b["image"] + int(1.5 * m.fps))):
             etiquette[i] = txt
+    fige = np.zeros(m.n, bool)
+    for f in s.figements:
+        fige[f["image"]:f["fin"]] = True
+        txt = ("Figement : tête et haut du visage moins mobiles que d'habitude "
+               f"({f['duree']:.1f} s)").replace(".", ",")
+        for i in range(f["image"], f["fin"]):
+            etiquette[i] = txt
     plan = np.searchsorted(np.array(m.coupes), np.arange(m.n), side="right") + 1
 
     cap = cv2.VideoCapture(m.chemin)
-    for _ in range(int(round(m.debut * m.fps))):
+    for _ in range(int(round(m.debut * m.fps)) + i0):
         cap.grab()
-    duree = m.n / m.fps
+    duree, duree_rendu = m.n / m.fps, (i1 - i0) / m.fps
     cmd = ["ffmpeg", "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24",
            "-s", f"{L}x{H}", "-r", f"{m.fps:.6f}", "-i", "-",
-           "-ss", f"{m.debut:.3f}", "-t", f"{duree:.3f}", "-i", m.chemin,
+           "-ss", f"{m.debut + i0 / m.fps:.3f}", "-t", f"{duree_rendu:.3f}", "-i", m.chemin,
            "-map", "0:v:0", "-map", "1:a:0?", "-c:v", "libx264", "-preset", "medium",
            "-crf", "20", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "160k",
-           "-t", f"{duree:.3f}", "-movflags", "+faststart", sortie]
+           "-t", f"{duree_rendu:.3f}", "-movflags", "+faststart", sortie]
     ff = subprocess.Popen(cmd, stdin=subprocess.PIPE)
     f13, f14, f12, f12g = police(13), police(14), police(12), police(12, True)
 
-    for i in range(m.n):
+    for i in range(i0, i1):
         lu, image = cap.read()
         if not lu:
             break
@@ -210,9 +225,13 @@ def rendre(m: Mesures, s: Signaux, sortie: str, titre: str) -> None:
         ligne(1, "Clignements", f"{cl:.0f} par minute" if np.isfinite(cl) else "-")
         ligne(2, "Parole", "parle" if (s.parle[i] and fiable) else "ne parle pas"
               if fiable else "-")
-        ligne(3, "Mesure", "fiable" if fiable else "limitée" if suivi else "aucune",
-              VERT if fiable else AMBRE)
-        ligne(4, "Visages à l'image", str(int(m.nb_visages[i])))
+        precise = fiable and s.largeur_visage >= LARGEUR_FIABLE
+        ligne(3, "Mesure", "fiable" if precise else "basse résolution" if fiable
+              else "limitée" if suivi else "aucune", VERT if precise else AMBRE)
+        zm = s.z_mobilite[i] if fiable else np.nan
+        ligne(4, "Mobilité", "figée" if fige[i] else "-" if not np.isfinite(zm)
+              else "forte" if zm > SEUIL_MOMENT else "habituelle",
+              BLEU if fige[i] else AMBRE if np.isfinite(zm) and zm > SEUIL_MOMENT else TEXTE)
 
         for e_, _ in enumerate(EXPRESSIONS):
             v = s.expressions[i, e_] if fiable else np.nan
@@ -251,13 +270,13 @@ def rendre(m: Mesures, s: Signaux, sortie: str, titre: str) -> None:
                    font=police(14, True), fill=couleur(g))
             x += 124
         if etiquette[i]:
-            d.text((PX0, 1022), etiquette[i], font=f13, fill=AMBRE)
+            d.text((PX0, 1022), etiquette[i], font=f13, fill=BLEU if fige[i] else AMBRE)
 
         xc = CX0 + (CX1 - CX0) * i / max(m.n - 1, 1)
         d.line([xc, CY0 - 4, xc, CY1 + 2], fill=TEXTE, width=2)
         ff.stdin.write(toile.tobytes())
-        if (i + 1) % 250 == 0:
-            print(f"  rendu : {i + 1} / {m.n} images", file=sys.stderr, flush=True)
+        if (i + 1 - i0) % 250 == 0:
+            print(f"  rendu : {i + 1 - i0} / {i1 - i0} images", file=sys.stderr, flush=True)
 
     cap.release()
     ff.stdin.close()

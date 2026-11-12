@@ -25,6 +25,7 @@ pip install -r requirements.txt
 python -m facescope interview.mp4
 python -m facescope interview.mp4 --debut 2:00 --duree 1:30     # un extrait
 python -m facescope interview.mp4 --base 0:10-0:40              # passage calme de référence
+python -m facescope interview.mp4 --rendu 7:00-8:00             # analyse tout, ne rend qu'un passage
 ```
 
 Trois fichiers sont créés dans `resultats/` :
@@ -60,8 +61,12 @@ Compter environ deux fois la durée de la vidéo (mesuré : 45 s traitées en 1 
 - **Mouvements du visage** : longueur de barre = intensité, couleur = écart à la ligne de
   base (vert habituel, orange au-dessus de 2, rouge au-dessus de 3,5).
 - **Écart à sa ligne de base** : l'indice global, son rang dans la vidéo, et le détail
-  par famille (visage, tête, regard, voix).
+  par famille (visage, mobilité, regard, voix).
 - **Mouvement bref** : une unité d'action qui s'active moins d'une demi-seconde.
+- **Mobilité** : « figée » quand la tête et le haut du visage bougent nettement moins que
+  d'habitude pendant au moins 2 secondes. Les figements sont en bleu sur la courbe.
+- **Mesure** : « basse résolution » quand le visage fait moins de 120 pixels de large.
+  En dessous de 60 pixels, il n'est pas mesuré du tout.
 - **Courbe du bas** : l'indice sur toute la durée, avec les changements de plan et les
   moments les plus atypiques.
 
@@ -73,8 +78,12 @@ Compter environ deux fois la durée de la vidéo (mesuré : 45 s traitées en 1 
 - Les unités d'action sont approchées par un modèle généraliste, pas codées par un expert.
 - À 25 images par seconde, un mouvement de moins de 80 ms n'est vu que sur 1 ou 2 images.
   La compression des vidéos en ligne dégrade encore ce niveau de détail.
-- Testé sur un film de fiction (Tears of Steel), pas encore sur une vraie interview
-  politique. La précision des mesures n'a pas été comparée à un codage humain.
+- Testé sur un film de fiction (Tears of Steel) et sur trois allocutions politiques en
+  640 x 360. À cette résolution le visage fait 53 à 75 pixels : une vidéo est inexploitable,
+  les deux autres sont mesurées avec l'alerte « basse résolution ». Il faut du 720p ou du
+  1080p pour une mesure fine.
+- La précision des mesures n'a pas été comparée à un codage humain. Les seuils (écart,
+  figement) sont réglés à la main sur quelques vidéos, pas appris sur des données annotées.
 - Pas encore de transcription ni de vérification des affirmations.
 
 ## Suite prévue
