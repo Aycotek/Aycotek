@@ -35,7 +35,7 @@ Trois fichiers sont créés dans `resultats/` :
 | Fichier | Contenu |
 |---|---|
 | `*_facescope.mp4` | La vidéo annotée (1920 x 1080, son d'origine) |
-| `*_facescope_vertical.mp4` | Avec `--format vertical` : 1080 x 1920, vidéo au centre, mesures et analyse autour |
+| `*_facescope_vertical.mp4` | Avec `--format vertical` : 1080 x 1920, analyse en haut, vidéo dessous, mesures en bas |
 | `*_rapport.json` | Moments atypiques, figements, écarts simultanés, transcription, lexique, limites |
 | `*_mesures.csv` | Toutes les mesures, une ligne par image |
 

@@ -1,7 +1,8 @@
 """Rendu vertical 9:16 (1080 x 1920) pour les réseaux sociaux.
 
-La vidéo reste au format d'origine au centre ; les mesures sont au-dessus et en dessous,
-avec un bloc « Analyse » alimenté par un fichier d'analyse (discours, véracité).
+De haut en bas : en-tête, bandeau (zoom et mesures de base), bloc d'analyse, vidéo au
+format d'origine, courbe d'écart, mesures détaillées. Le bloc d'analyse est alimenté par
+un fichier rédigé à part (discours, véracité) ; sans fichier, il résume les mesures.
 """
 from __future__ import annotations
 
@@ -20,12 +21,15 @@ from .signaux import (AFFICHEES, CODES, EXPRESSIONS, LARGEUR_FIABLE, SEUIL_MOMEN
                       Signaux)
 
 L, H = 1080, 1920
-M = 36                                    # marge latérale
-VY, VH = 316, 608                         # zone de la vidéo
-CX0, CX1, CY0, CY1 = M, L - M, 1032, 1122  # courbe d'écart
-ZOOM_PX = 200
-AY0, AY1 = 1644, 1838                     # bloc d'analyse
-COL2 = 560                                # début de la colonne de droite
+M = 36                                       # marge latérale
+BY0, BY1 = 88, 248                           # bandeau : zoom et mesures de base
+AY0, AY1 = 256, 640                          # bloc d'analyse
+VY, VH = 648, 608                            # vidéo
+CX0, CX1, CY0, CY1 = M, L - M, 1296, 1376    # courbe d'écart
+DY = 1410                                    # colonnes de mesures
+EY = 1706                                    # bloc « écart à sa ligne de base »
+ZOOM_PX = 144
+COL2 = 560                                   # début de la colonne de droite
 VERDICTS = {"exact": VERT, "confirmé": VERT, "inexact": ROUGE, "faux": ROUGE,
             "trompeur": AMBRE, "imprécis": AMBRE, "contesté": AMBRE, "à nuancer": AMBRE,
             "partiel": AMBRE, "incohérence": AMBRE, "non vérifiable": DISCRET}
@@ -35,8 +39,8 @@ def _couper(d, texte, fonte, largeur, max_lignes) -> list:
     """Découpe un texte en lignes qui tiennent dans la largeur, avec « … » s'il déborde."""
     lignes, courante, deborde = [], "", False
     # Espaces insécables : un guillemet ou un deux-points ne reste jamais seul en bout de ligne.
-    for avant, apres in (("« ", "«\u00a0"), (" »", "\u00a0»"), (" :", "\u00a0:"),
-                         (" ?", "\u00a0?"), (" !", "\u00a0!"), (" ;", "\u00a0;")):
+    for avant, apres in (("« ", "« "), (" »", " »"), (" :", " :"),
+                         (" ?", " ?"), (" !", " !"), (" ;", " ;")):
         texte = texte.replace(avant, apres)
     for mot in texte.split(" "):
         if not mot:
@@ -109,38 +113,63 @@ def tracer_courbe(d, m: Mesures, s: Signaux, analyse: list, debut: float) -> Non
 
 
 def _fond(m: Mesures, s: Signaux, titre: str, analyse: list) -> Image.Image:
+    """Tout ce qui ne change pas d'une image à l'autre."""
     img = Image.new("RGB", (L, H), FOND)
     d = ImageDraw.Draw(img)
     d.text((M, 22), "FACESCOPE", font=police(34, True), fill=TEXTE)
     d.text((282, 34), titre[:34], font=police(20), fill=DISCRET)
-    d.rectangle([0, 88, L, 308], fill=PANNEAU)
+    d.rectangle([0, BY0, L, BY1], fill=PANNEAU)
+    d.rectangle([0, AY0, L, AY1], fill=PANNEAU)
+    d.text((M, AY0 + 16), "ANALYSE", font=police(24, True), fill=TEXTE)
 
-    d.text((M, 1002), "ÉCART À SA LIGNE DE BASE AU FIL DE LA VIDÉO", font=police(18, True),
+    d.text((M, CY0 - 28), "ÉCART À SA LIGNE DE BASE AU FIL DE LA VIDÉO", font=police(18, True),
            fill=TEXTE)
-    _droite(d, L - M, 1004, "▲ moment atypique   ▬ figement   ▬ écart sur plusieurs canaux",
+    _droite(d, L - M, CY0 - 26, "▲ moment atypique   ▬ figement   ▬ écart sur plusieurs canaux",
             police(14), DISCRET)
     tracer_courbe(d, m, s, analyse, m.debut)
 
-    d.text((M, 1168), "EXPRESSION AFFICHÉE", font=police(22, True), fill=TEXTE)
-    d.text((M, 1198), "ressemblance, pas l'émotion ressentie", font=police(16), fill=DISCRET)
+    d.text((M, DY), "EXPRESSION AFFICHÉE", font=police(22, True), fill=TEXTE)
+    d.text((M, DY + 28), "ressemblance, pas l'émotion ressentie", font=police(16), fill=DISCRET)
     for e, (nom, _, _) in enumerate(EXPRESSIONS):
-        d.text((M, 1228 + 34 * e), nom, font=police(21), fill=TEXTE)
-    d.text((M, 1440), "VOIX ET PAROLE", font=police(22, True), fill=TEXTE)
-
-    d.text((COL2, 1168), "MOUVEMENTS DU VISAGE", font=police(22, True), fill=TEXTE)
-    d.text((COL2, 1198), "couleur = écart à sa ligne de base", font=police(16), fill=DISCRET)
+        d.text((M, DY + 56 + 31 * e), nom, font=police(21), fill=TEXTE)
+    d.text((COL2, DY), "MOUVEMENTS DU VISAGE", font=police(22, True), fill=TEXTE)
     libelles = dict((c, lib) for c, lib, _ in UNITES)
     for r, code in enumerate(AFFICHEES):
-        d.text((COL2, 1229 + 23 * r), code, font=police(15, True), fill=DISCRET)
-        d.text((COL2 + 58, 1227 + 23 * r), libelles[code], font=police(17), fill=TEXTE)
+        y = DY + 35 + 21.5 * r
+        d.text((COL2, y + 2), code, font=police(15, True), fill=DISCRET)
+        d.text((COL2 + 58, y), libelles[code], font=police(17), fill=TEXTE)
 
-    d.text((M, 1516), "ÉCART À SA LIGNE DE BASE", font=police(22, True), fill=TEXTE)
-    _droite(d, L - M, 1520, "1 = habituel pour cette personne", police(16), DISCRET)
-    d.rectangle([0, AY0, L, AY1], fill=PANNEAU)
-    d.text((M, AY0 + 12), "ANALYSE", font=police(22, True), fill=TEXTE)
+    d.text((M, EY + 4), "ÉCART À SA LIGNE DE BASE", font=police(22, True), fill=TEXTE)
+    _droite(d, L - M, EY + 8, "1 = habituel pour cette personne", police(16), DISCRET)
     for k, ligne in enumerate(_couper(d, AVERTISSEMENT, police(18), L - 2 * M, 2)):
-        d.text((M, 1856 + 24 * k), ligne, font=police(18), fill=DISCRET)
+        d.text((M, 1852 + 24 * k), ligne, font=police(18), fill=DISCRET)
     return img
+
+
+def _dessiner_analyse(d, actif, phrase, lecture) -> None:
+    """Bloc d'analyse : ce qui est dit, puis le verdict, l'explication et la source."""
+    x = M + 150
+    verdict = str(actif.get("verdict", "")) if actif else ""
+    if verdict:
+        teinte = VERDICTS.get(verdict.lower(), BLEU)
+        larg = d.textlength(verdict.upper(), font=police(20, True)) + 28
+        d.rounded_rectangle([x, AY0 + 12, x + larg, AY0 + 48], 7, fill=teinte)
+        d.text((x + 14, AY0 + 18), verdict.upper(), font=police(20, True), fill=FOND)
+    titre = actif.get("titre", "") if actif else "Lecture des mesures"
+    for ligne in _couper(d, titre, police(30, True), L - 2 * M, 1):
+        d.text((M, AY0 + 58), ligne, font=police(30, True), fill=TEXTE)
+
+    if phrase:
+        d.rectangle([M, AY0 + 108, M + 4, AY0 + 164], fill=TRAIT)
+        for k, ligne in enumerate(_couper(d, "« " + phrase + " »", police(22), L - 2 * M - 20, 2)):
+            d.text((M + 20, AY0 + 106 + 30 * k), ligne, font=police(22), fill=DISCRET)
+
+    texte, teinte = (actif.get("texte", ""), TEXTE) if actif else lecture
+    for k, ligne in enumerate(_couper(d, texte, police(26), L - 2 * M, 4)):
+        d.text((M, AY0 + 180 + 36 * k), ligne, font=police(26), fill=teinte)
+    if actif and actif.get("source"):
+        d.text((M, AY1 - 34), ("Source : " + actif["source"])[:105], font=police(18),
+               fill=DISCRET)
 
 
 def rendre(m: Mesures, s: Signaux, sortie: str, titre: str, passage: tuple | None = None,
@@ -168,8 +197,8 @@ def rendre(m: Mesures, s: Signaux, sortie: str, titre: str, passage: tuple | Non
            "-crf", "20", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "160k",
            "-t", f"{duree_rendu:.3f}", "-movflags", "+faststart", sortie]
     ff = subprocess.Popen(cmd, stdin=subprocess.PIPE)
-    f16, f18, f20, f21, f22 = police(16), police(18), police(20), police(21), police(22)
-    g18, g22, g26 = police(18, True), police(22, True), police(26, True)
+    f16, f18, f20, f21 = police(16), police(18), police(20), police(21)
+    g22, g24 = police(22, True), police(24, True)
 
     for i in range(i0, i1):
         lu, image = cap.read()
@@ -185,7 +214,7 @@ def rendre(m: Mesures, s: Signaux, sortie: str, titre: str, passage: tuple | Non
                 police(22), TEXTE)
         suivi, fiable = bool(m.valide[i]), bool(s.ok[i])
 
-        # Bandeau du haut : zoom sur le visage et mesures de base.
+        # Bandeau : zoom sur le visage et mesures de base.
         if suivi:
             x0, y0, x1, y1 = (m.boite[i] * ech + [ox, oy, ox, oy]).tolist()
             teinte, t = (VERT if fiable else DISCRET), 18
@@ -196,16 +225,17 @@ def rendre(m: Mesures, s: Signaux, sortie: str, titre: str, passage: tuple | Non
             cx, cy, cote = m.cadre[i]
             e = ZOOM_PX / max(cote, 1.0)
             mat = np.float32([[e, 0, ZOOM_PX / 2 - cx * e], [0, e, ZOOM_PX / 2 - cy * e]])
-            toile.paste(Image.fromarray(cv2.warpAffine(rgb, mat, (ZOOM_PX, ZOOM_PX))), (M, 98))
+            toile.paste(Image.fromarray(cv2.warpAffine(rgb, mat, (ZOOM_PX, ZOOM_PX))),
+                        (M, BY0 + 8))
         else:
-            d.rectangle([M, 98, M + ZOOM_PX, 98 + ZOOM_PX], fill=FOND)
-            d.text((M + 16, 184), "Pas de visage", font=f20, fill=DISCRET)
-        d.rectangle([M, 98, M + ZOOM_PX, 98 + ZOOM_PX], outline=TRAIT)
+            d.rectangle([M, BY0 + 8, M + ZOOM_PX, BY0 + 8 + ZOOM_PX], fill=FOND)
+            d.text((M + 10, BY0 + 70), "Pas de visage", font=f18, fill=DISCRET)
+        d.rectangle([M, BY0 + 8, M + ZOOM_PX, BY0 + 8 + ZOOM_PX], outline=TRAIT)
 
         def case(colonne, rang, nom, valeur, teinte=TEXTE):
-            x, y = (270, 660)[colonne], 100 + 68 * rang
+            x, y = (210, 520, 800)[colonne], BY0 + 14 + 72 * rang
             d.text((x, y), nom, font=f16, fill=DISCRET)
-            d.text((x, y + 22), valeur, font=g26, fill=teinte)
+            d.text((x, y + 22), valeur, font=g24, fill=teinte)
 
         if suivi:
             lacet, tangage, roulis = m.angles[i]
@@ -214,24 +244,36 @@ def rendre(m: Mesures, s: Signaux, sortie: str, titre: str, passage: tuple | Non
         else:
             case(0, 0, "Tête (lacet / tangage / roulis)", "-", DISCRET)
         cl = s.clignements[i]
-        case(0, 1, "Clignements", f"{cl:.0f} par minute" if np.isfinite(cl) else "-")
+        case(1, 0, "Clignements", f"{cl:.0f} par minute" if np.isfinite(cl) else "-")
         zm = s.z_mobilite[i] if fiable else np.nan
-        case(0, 2, "Mobilité", "figée" if fige[i] else "-" if not np.isfinite(zm)
+        case(2, 0, "Mobilité", "figée" if fige[i] else "-" if not np.isfinite(zm)
              else "forte" if zm > SEUIL_MOMENT else "habituelle",
              BLEU if fige[i] else AMBRE if np.isfinite(zm) and zm > SEUIL_MOMENT else TEXTE)
-        case(1, 0, "Parole", "parle" if (s.parle[i] and fiable) else "ne parle pas"
+        case(0, 1, "Parole", "parle" if (s.parle[i] and fiable) else "ne parle pas"
              if fiable else "-")
         debit = s.debit[i]
         case(1, 1, "Débit", f"{debit:.1f} mots/s".replace(".", ",")
              if np.isfinite(debit) and debit > 0 else "-")
         precise = fiable and s.largeur_visage >= LARGEUR_FIABLE
-        case(1, 2, "Mesure", "fiable" if precise else "basse résolution" if fiable
+        case(2, 1, "Mesure", "fiable" if precise else "basse résolution" if fiable
              else "limitée" if suivi else "aucune", VERT if precise else AMBRE)
 
-        # Ce qui est dit.
-        phrase = parole.phrase_a(s.transcription, m.t[i])
-        for k, ligne in enumerate(_couper(d, phrase, police(24), L - 2 * M, 2)):
-            d.text((M, 932 + 31 * k), ligne, font=police(24), fill=TEXTE)
+        # Bloc d'analyse : l'élément en cours, sinon la lecture automatique des mesures.
+        actif = None
+        for e in analyse:
+            if e["debut"] <= instant <= e.get("fin", e["debut"] + 12):
+                actif = e
+        hauts = [nom for nom, serie in s.groupes.items()
+                 if np.isfinite(serie[i]) and serie[i] > SEUIL_MOMENT]
+        if len(hauts) >= 2:
+            lecture = ("Écart simultané sur plusieurs canaux : " + ", ".join(hauts).lower()
+                       + ". C'est un endroit où regarder de plus près, pas une preuve.", AMBRE)
+        elif fige[i]:
+            lecture = ("Figement : la tête et le haut du visage bougent moins que d'habitude.",
+                       BLEU)
+        else:
+            lecture = ("Rien d'inhabituel sur ce passage.", DISCRET)
+        _dessiner_analyse(d, actif, parole.phrase_a(s.transcription, m.t[i]), lecture)
 
         xc = CX0 + (CX1 - CX0) * i / max(m.n - 1, 1)
         d.line([xc, CY0 - 4, xc, CY1 + 2], fill=TEXTE, width=2)
@@ -239,76 +281,41 @@ def rendre(m: Mesures, s: Signaux, sortie: str, titre: str, passage: tuple | Non
         # Colonnes de mesures.
         for e_, _ in enumerate(EXPRESSIONS):
             v = s.expressions[i, e_] if fiable else np.nan
-            y = 1228 + 34 * e_
+            y = DY + 56 + 31 * e_
             _barre(d, 262, y + 9, 440, v, VERT, h=10)
             _droite(d, 520, y, f"{100 * v:.0f} %" if np.isfinite(v) else "-", f21, TEXTE)
-        f0, db = s.f0[i], s.db[i]
-        d.text((M, 1476), "Hauteur", font=f16, fill=DISCRET)
-        d.text((M + 70, 1470), f"{f0:.0f} Hz" if np.isfinite(f0) else "-", font=g22, fill=TEXTE)
-        d.text((M + 190, 1476), "Énergie", font=f16, fill=DISCRET)
-        d.text((M + 258, 1470), f"{db:.0f} dB" if np.isfinite(db) else "-", font=g22, fill=TEXTE)
+        f0, db, y = s.f0[i], s.db[i], DY + 250
+        d.text((M, y + 6), "Voix", font=f16, fill=DISCRET)
+        d.text((M + 44, y), f"{f0:.0f} Hz" if np.isfinite(f0) else "-", font=g22, fill=TEXTE)
+        d.text((M + 150, y + 6), "Énergie", font=f16, fill=DISCRET)
+        d.text((M + 218, y), f"{db:.0f} dB" if np.isfinite(db) else "-", font=g22, fill=TEXTE)
         pause = s.pause[i]
         if np.isfinite(pause) and pause >= 1.0:
-            d.text((M + 372, 1474), f"silence {pause:.1f} s".replace(".", ","), font=f18,
+            d.text((M + 330, y + 4), f"silence {pause:.1f} s".replace(".", ","), font=f18,
                    fill=AMBRE)
         for r, code in enumerate(AFFICHEES):
             k = k_au[code]
             v = s.intensite[i, k] if fiable else np.nan
             z = s.z_au[i, k] if fiable else np.nan
-            y = 1228 + 23 * r
-            _barre(d, COL2 + 300, y + 6, L - M - 62, v, couleur(z), h=9)
-            _droite(d, L - M, y, f"{z:+.1f}" if np.isfinite(z) else "-", police(16, True),
+            y = DY + 35 + 21.5 * r
+            _barre(d, COL2 + 300, y + 7, L - M - 62, v, couleur(z), h=9)
+            _droite(d, L - M, y + 1, f"{z:+.1f}" if np.isfinite(z) else "-", police(16, True),
                     couleur(z))
 
         ec, pc = s.ecart[i], s.percentile[i]
-        d.text((M, 1540), f"{ec:.1f}".replace(".", ",") if np.isfinite(ec) else "-",
-               font=police(56, True), fill=couleur(ec))
+        d.text((M, EY + 28), f"{ec:.1f}".replace(".", ",") if np.isfinite(ec) else "-",
+               font=police(52, True), fill=couleur(ec))
         if np.isfinite(pc):
-            d.text((190, 1550), f"plus élevé que {pc:.0f} % de la vidéo", font=f20, fill=TEXTE)
-            _barre(d, 190, 1582, L - M, pc / 100, couleur(ec), h=8)
+            d.text((180, EY + 38), f"plus élevé que {pc:.0f} % de la vidéo", font=f20, fill=TEXTE)
+            _barre(d, 180, EY + 70, L - M, pc / 100, couleur(ec), h=8)
         x = M
         for nom, serie in s.groupes.items():
             g = serie[i]
-            d.text((x, 1612), nom, font=f16, fill=DISCRET)
-            d.text((x + d.textlength(nom + " ", font=f16), 1607),
+            d.text((x, EY + 98), nom, font=f16, fill=DISCRET)
+            d.text((x + d.textlength(nom + " ", font=f16), EY + 93),
                    f"{g:.1f}".replace(".", ",") if np.isfinite(g) else "-", font=g22,
                    fill=couleur(g))
             x += (L - 2 * M) // len(s.groupes)
-
-        # Bloc d'analyse : l'élément en cours, sinon la lecture automatique des signaux.
-        actif = None
-        for e in analyse:
-            if e["debut"] <= instant <= e.get("fin", e["debut"] + 12):
-                actif = e
-        if actif:
-            verdict = str(actif.get("verdict", ""))
-            teinte = VERDICTS.get(verdict.lower(), BLEU)
-            x = M + 130
-            if verdict:
-                larg = d.textlength(verdict.upper(), font=g18) + 24
-                d.rounded_rectangle([x, AY0 + 10, x + larg, AY0 + 40], 6, fill=teinte)
-                d.text((x + 12, AY0 + 14), verdict.upper(), font=g18, fill=FOND)
-                x += larg + 14
-            d.text((x, AY0 + 13), actif.get("titre", "")[:60], font=g22, fill=TEXTE)
-            for k, ligne in enumerate(_couper(d, actif.get("texte", ""), f21, L - 2 * M, 4)):
-                d.text((M, AY0 + 50 + 28 * k), ligne, font=f21, fill=TEXTE)
-            if actif.get("source"):
-                d.text((M, AY1 - 28), ("Source : " + actif["source"])[:110], font=f16,
-                       fill=DISCRET)
-        else:
-            hauts = [nom for nom, serie in s.groupes.items()
-                     if np.isfinite(serie[i]) and serie[i] > SEUIL_MOMENT]
-            if len(hauts) >= 2:
-                d.text((M, AY0 + 54), "Écart simultané sur plusieurs canaux : "
-                       + ", ".join(hauts).lower(), font=f21, fill=AMBRE)
-                d.text((M, AY0 + 84), "C'est un endroit où regarder de plus près, pas une preuve.",
-                       font=f18, fill=DISCRET)
-            elif fige[i]:
-                d.text((M, AY0 + 54), "Figement : tête et haut du visage moins mobiles que "
-                       "d'habitude.", font=f21, fill=BLEU)
-            else:
-                d.text((M, AY0 + 54), "Rien d'inhabituel sur ce passage.", font=f21,
-                       fill=DISCRET)
 
         ff.stdin.write(toile.tobytes())
         if (i + 1 - i0) % 250 == 0:
