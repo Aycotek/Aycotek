@@ -69,3 +69,35 @@ La seule façon fiable de savoir si une affirmation est fausse reste de la véri
 - Non vérifié dans cette recherche : le classement des systèmes de reconnaissance des
   émotions (annexe III), les obligations de transparence (article 50), le RGPD, et le
   risque de diffamation si on publie « X ment » à partir d'un score.
+
+## 6. Les logiciels qui existent déjà
+
+| Outil | Ce qu'il fait bien | Ce qu'il fait mal |
+|---|---|---|
+| OpenFace 3.0 (CMU, 2025, libre pour la recherche) | Unités d'action, regard, émotion dans un seul outil, sur processeur | Score F1 d'environ 60 % sur les unités d'action face à des codeurs humains (chiffre repris de résumés de l'article, à vérifier) |
+| FaceReader (Noldus, payant) | Le seul outil commercial avec des études de validation publiées | Validé surtout sur des expressions posées ; en difficulté sur les expressions de faible intensité et les images de basse qualité |
+| AFFDEX (Affectiva / iMotions, payant) | Entraîné sur de très grands volumes de visages filmés en conditions réelles | Précision très variable selon l'émotion et le jeu de données (Stöckli et al.) |
+| Azure Face (Microsoft) | - | Microsoft a retiré la reconnaissance des émotions en 2022, faute de consensus scientifique |
+
+Sources : [OpenFace 3.0](https://arxiv.org/abs/2506.02891v1) ·
+[validation de FaceReader 7](https://pmc.ncbi.nlm.nih.gov/articles/PMC6797095) ·
+[Stöckli et al.](https://boris.unibe.ch/117417/7/St%C3%B6ckli%20et%20al.%202018.pdf) ·
+[retrait chez Microsoft](https://www.engadget.com/microsoft-retires-facial-recognition-ai-emotion-detection-183010078.html)
+
+Ce que ça veut dire pour nous : même les meilleurs outils se trompent souvent sur le simple
+fait de savoir quel muscle bouge, et ils sont les plus faibles exactement sur notre cible
+(visages fermés, expressions discrètes, vidéos compressées). Le gain ne viendra pas d'un
+meilleur lecteur d'émotions mais de trois choses : comparer la personne à elle-même, croiser
+le visage avec la voix et la parole, et mesurer la précision sur des extraits annotés par
+des humains.
+
+## 7. Données pour mesurer la déstabilisation
+
+StressID (NeurIPS 2023) est le jeu de données public le plus proche : 65 participants,
+11 tâches, plus de 39 heures, vidéo du visage, son et signaux physiologiques, avec
+l'auto-évaluation du stress. Licence propriétaire : les conditions d'accès sont sur la page
+du projet et n'ont pas été vérifiées ici.
+[Fiche NeurIPS](https://neurips.cc/virtual/2023/poster/73454) ·
+[Présentation EURECOM](https://www.eurecom.edu/en/node/4900665)
+
+Aucun jeu de données public ne porte sur des responsables politiques en interview.
