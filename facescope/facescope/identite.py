@@ -373,6 +373,26 @@ def empreintes_photos(dossier: str, modele: str | None = None) -> list:
     return sortie
 
 
+def saisir_noms(ident: dict, deja: dict, lire=None, ecrire=print) -> dict:
+    """--demander-noms : demande le nom de chaque participant qui n'en a pas (ni photo, ni
+    --noms). Entrée vide : la lettre reste. Renvoie {lettre: nom} des noms saisis.
+    `lire` : input par défaut."""
+    lire = lire or input
+    sans_nom = [p["id"] for p in ident["personnes"] if not p["nom"] and p["id"] not in deja]
+    saisis = {}
+    if not sans_nom:
+        return saisis
+    ecrire("Noms des participants (lettres de la planche). Entrée vide : garder la lettre.")
+    for lettre in sans_nom:
+        try:
+            nom = lire(f"  {lettre} = ? ").strip()
+        except EOFError:
+            break
+        if nom:
+            saisis[lettre] = nom
+    return saisis
+
+
 def nommer(ident: dict, noms: dict, photos: list) -> list:
     """Photos puis --noms (voir nommer_photos et nommer_lettres)."""
     return nommer_photos(ident, photos) + nommer_lettres(ident, noms)

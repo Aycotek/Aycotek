@@ -24,6 +24,7 @@ et où vérifier ce qui a été dit, rien de plus.
 ```bash
 pip install -r requirements.txt
 # + ffmpeg ; sous Linux : apt-get install -y ffmpeg libegl1 libgles2
+# + Node.js pour une vidéo donnée par son adresse (yt-dlp s'en sert pour YouTube)
 ```
 
 ## Utilisation
@@ -39,7 +40,31 @@ python -m facescope debat.mp4 --debut 7:00 --duree 3:30 --format vertical    # d
 python -m facescope debat.mp4 --debut 7:00 --duree 3:30 --format vertical --noms "A=Prénom Nom,B=Prénom Nom"
 python -m facescope debat.mp4 --debut 7:00 --duree 3:30 --visages photos/   # photos « Prénom Nom.jpg »
 python -m facescope debat.mp4 --visages photos/ --sans-video   # rapport et planche seuls, sans vidéo
+python -m facescope "https://www.youtube.com/watch?v=…" --demander-noms   # adresse, noms saisis
 ```
+
+**Vidéo en ligne** (0.7). Si l'argument est une adresse http(s), la vidéo est téléchargée
+par yt-dlp (module Python) en 720p au plus, en mp4 (image et son fusionnés par ffmpeg,
+Node.js pour YouTube), sous `<id>.mp4` dans `--dossier-videos` (par défaut, un dossier
+`videos` à côté du dossier de sortie), avec `<id>.source.json` (adresse, titre, chaîne,
+date). Si ces deux fichiers existent, rien n'est retéléchargé et le réseau n'est pas
+consulté. La source figure dans le rapport (clé `source`) et dans le bilan.
+
+**Noms saisis** (0.7). Avec `--demander-noms`, juste après l'identification des
+participants, s'il en reste sans nom (ni photo, ni `--noms`), l'outil enregistre la
+planche, l'ouvre, puis demande en console « A = ? », « B = ? »… (Entrée vide : la lettre
+reste). Les noms saisis sont appliqués exactement comme `--noms` (rendu, rapport, planche,
+bilan), et l'analyse continue dans la même exécution. Si l'entrée n'est pas une console
+(redirigée, tâche planifiée), rien n'est demandé.
+
+**Bilan** (0.7). `*_bilan.txt` (UTF-8) reprend le résumé affiché en fin d'exécution,
+précédé de la source, de la date de l'analyse et de la version, et suivi de
+l'avertissement.
+
+Le lanceur Windows `Facescope - analyser une vidéo.bat` accepte une vidéo glissée dessus
+ou un chemin ou une adresse collés ; il active `--demander-noms` et `--format vertical`,
+range les vidéos téléchargées dans `facescope-analyses\videos`, affiche le chemin du bilan
+et ouvre le dossier des résultats.
 
 L'analyse croisée est produite à chaque fois, sans fichier à fournir. `--analyse` est
 facultatif : il ajoute la vérification des faits rédigée à part (voir plus bas).
@@ -54,6 +79,8 @@ Options :
 | `--recalculer` | Refait l'analyse du visage même si `*_mesures.npz` existe |
 | `--debat` | Analyse par personne et attribution de la parole même si une seule personne est reconnue (pour séparer une voix hors champ) |
 | `--sans-voix` | Attribue la parole par la bouche seule, sans empreinte vocale |
+| `--demander-noms` | Ouvre la planche et demande en console le nom des participants sans nom (0.7) |
+| `--dossier-videos dossier` | Où enregistrer une vidéo donnée par son adresse (0.7) |
 
 Les fichiers sont créés dans `resultats/` (ou le dossier `-o`) :
 
@@ -66,6 +93,7 @@ Les fichiers sont créés dans `resultats/` (ou le dossier `-o`) :
 | `*_personnes.jpg` | La planche des personnes : une ligne par participant (lettre, nom s'il est donné, temps à l'image, temps de parole, une vignette par piste pour vérifier le regroupement), puis le public (une vignette par personne, avec son temps à l'image), puis les autres visages |
 | `*_mesures.npz` | Les mesures de tous les visages, image par image : relues au lancement suivant si la vidéo, le début, la durée, le nombre de visages et la version du format n'ont pas changé |
 | `*_transcription_*.json` | La transcription, relue elle aussi au lancement suivant |
+| `*_bilan.txt` | Le résumé de fin d'exécution, avec la source, la date et la version (0.7) |
 
 En fin d'exécution, la commande affiche la synthèse : pour une personne seule, comme en
 0.4 ; pour un débat, par personne (temps à l'image et de parole, moments atypiques,

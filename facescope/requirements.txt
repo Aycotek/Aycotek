@@ -3,3 +3,4 @@ opencv-python-headless>=5.0
 numpy>=2.0
 pillow>=10.1
 faster-whisper>=1.2   # facultatif : canal Parole
+yt-dlp[default]>=2026.10.26   # facultatif : vidéo donnée par son adresse (+ Node.js)

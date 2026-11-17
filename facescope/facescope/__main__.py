@@ -3,11 +3,13 @@
     python -m facescope interview.mp4
     python -m facescope interview.mp4 --debut 2:00 --duree 1:30 --base 0:05-0:35
     python -m facescope debat.mp4 --format vertical --noms "A=Prénom Nom,B=Prénom Nom"
+    python -m facescope "https://www.youtube.com/watch?v=…" --demander-noms
 """
 from __future__ import annotations
 
 import argparse
 import csv
+import datetime
 import json
 import os
 import sys
@@ -16,9 +18,9 @@ import time
 import numpy as np
 
 from . import (analyse, audio, croisement, identite, locuteurs, parole, personnes, rendu,
-               rendu_vertical, signaux)
+               rendu_vertical, signaux, telechargement)
 
-VERSION = "0.6"
+VERSION = "0.7"
 PORTEE = ("Les clés ligne_de_base, moments_atypiques, figements, ecarts_simultanes, "
           "croisement, mouvements_brefs et le fichier CSV portent, comme en 0.4, sur le visage "
           "dominant de chaque plan avec une seule ligne de base et toute la parole. Dans un "
@@ -103,12 +105,25 @@ def main() -> None:
     p.add_argument("--sans-voix", action="store_true",
                    help="dans un débat, attribue la parole par la bouche seule, sans empreinte "
                         "vocale")
+    p.add_argument("--dossier-videos",
+                   help="où enregistrer une vidéo donnée par son adresse (défaut : dossier "
+                        "« videos » à côté du dossier de sortie)")
+    p.add_argument("--demander-noms", action="store_true",
+                   help="après l'identification, ouvre la planche et demande en console le nom "
+                        "des participants sans nom (sans effet si l'entrée n'est pas un terminal)")
     a = p.parse_args()
     if a.visages and not os.path.isdir(a.visages):
         raise SystemExit(f"--visages : dossier introuvable : {a.visages}")
     noms = identite.lire_noms(a.noms)
 
     os.makedirs(a.sortie, exist_ok=True)
+    source = None
+    if telechargement.est_url(a.video):
+        dossier = a.dossier_videos or os.path.join(os.path.dirname(os.path.abspath(a.sortie)),
+                                                    "videos")
+        a.video, source = telechargement.telecharger(a.video.strip(), dossier)
+    elif not os.path.isfile(a.video):
+        raise SystemExit(f"Vidéo introuvable : {a.video}")
     nom = os.path.splitext(os.path.basename(a.video))[0]
     racine = os.path.join(a.sortie, nom)
     titre = os.path.basename(a.video)
@@ -162,12 +177,27 @@ def main() -> None:
     if multi and texte and not a.sans_voix:
         son_brut = audio.brut(a.video, a.debut, m.n / m.fps)
         son_brut = son_brut if son_brut.size >= audio.FREQ else None
+    titre_planche = f"{titre}  {rendu.tc(a.debut)} – {rendu.tc(a.debut + m.n / m.fps)}"
+
+    def demander(ident_, parole_):
+        """--demander-noms : planche provisoire ouverte, puis un nom par lettre en console."""
+        if not any(not q["nom"] and q["id"] not in noms for q in ident_["personnes"]):
+            return {}
+        identite.planche(v, ident_, racine + "_personnes.jpg", titre_planche, parole_)
+        print(f"\nPlanche des personnes : {racine}_personnes.jpg", file=sys.stderr)
+        try:
+            os.startfile(os.path.abspath(racine + "_personnes.jpg"))
+        except (AttributeError, OSError):
+            pass
+        return identite.saisir_noms(ident_, noms,
+                                    ecrire=lambda t: print(t, file=sys.stderr))
+
+    interactif = a.demander_noms and _console_interactive()
     debat = personnes.analyser(v, ident, m, s, croise, son, base, texte, a.debat, son_brut,
-                               noms)
+                               noms, demander if interactif else None)
     noms_et_photos += debat.noms if debat else identite.nommer_lettres(ident, noms)
     identite.finaliser_compte_rendu(noms_et_photos)
-    identite.planche(v, ident, racine + "_personnes.jpg",
-                     f"{titre}  {rendu.tc(a.debut)} – {rendu.tc(a.debut + m.n / m.fps)}",
+    identite.planche(v, ident, racine + "_personnes.jpg", titre_planche,
                      {p.id: p.temps_parole_s for p in debat.personnes} if debat else {})
 
     with open(racine + "_mesures.csv", "w", newline="", encoding="utf-8") as f:
@@ -218,6 +248,7 @@ def main() -> None:
     rapport = {
         "outil": f"facescope {VERSION}",
         "video": os.path.basename(a.video),
+        "source": source or {"fichier": os.path.abspath(a.video)},
         "extrait": {"debut_s": a.debut, "duree_s": round(m.n / m.fps, 2), "images": m.n,
                     "images_par_seconde": round(m.fps, 3), "plans": len(m.coupes) + 1},
         "avertissement": rendu.AVERTISSEMENT,
@@ -261,52 +292,97 @@ def main() -> None:
         else:
             rendu.rendre(m, s, racine + "_facescope.mp4", titre, passage)
 
-    print(f"\nExtrait de {m.n / m.fps:.0f} s, {len(m.coupes) + 1} plans, visage exploitable sur "
-          f"{s.base['images_exploitables_pct']} % des images. Mesures du visage "
-          f"{source_mesures} en {duree_mesures:.0f} s.")
+    lignes = _resume(a, m, s, croise, debat, ident, coupures, alertes, racine, source_mesures,
+                     duree_mesures)
+    bilan = racine + "_bilan.txt"
+    with open(bilan, "w", encoding="utf-8-sig", newline="\r\n") as f:
+        f.write("\n".join(_entete(a.video, source) + lignes) + "\n")
+    print("\n".join(lignes[:-1] + [f"Bilan : {bilan}", lignes[-1]]))
+
+
+def _console_interactive() -> bool:
+    """Vrai si l'entrée est un terminal où quelqu'un peut taper. Sous Windows, isatty() est
+    vrai aussi pour NUL (entrée redirigée vers le vide) : on vérifie que c'est une console."""
+    try:
+        if sys.stdin is None or not sys.stdin.isatty():
+            return False
+        if os.name != "nt":
+            return True
+        import ctypes
+        import msvcrt
+        mode = ctypes.c_uint32()
+        poignee = msvcrt.get_osfhandle(sys.stdin.fileno())
+        return bool(ctypes.windll.kernel32.GetConsoleMode(poignee, ctypes.byref(mode)))
+    except (OSError, ValueError, AttributeError):
+        return False
+
+
+def _entete(video: str, source: dict | None) -> list:
+    """Début du bilan : la source, la date de l'analyse, la version."""
+    lignes = [f"FACESCOPE {VERSION} · BILAN"]
+    if source:
+        lignes.append(f"Source : {source.get('url')}")
+        for cle, nom in (("titre", "Titre"), ("chaine", "Chaîne"), ("date", "Mise en ligne")):
+            if source.get(cle):
+                lignes.append(f"{nom} : {source[cle]}")
+        lignes.append(f"Fichier : {os.path.abspath(video)}")
+    else:
+        lignes.append(f"Source : {os.path.abspath(video)}")
+    lignes.append(f"Analyse du {datetime.datetime.now():%d/%m/%Y à %H:%M}, facescope {VERSION}.")
+    return lignes
+
+
+def _resume(a, m, s, croise, debat, ident, coupures, alertes, racine, source_mesures,
+            duree_mesures) -> list:
+    """Le résumé de fin, en lignes de texte : affiché en console et écrit dans le bilan."""
+    lignes = []
+    out = lignes.append
+    out(f"\nExtrait de {m.n / m.fps:.0f} s, {len(m.coupes) + 1} plans, visage exploitable sur "
+        f"{s.base['images_exploitables_pct']} % des images. Mesures du visage "
+        f"{source_mesures} en {duree_mesures:.0f} s.")
     for alerte in alertes:
-        print("ATTENTION : " + alerte)
+        out("ATTENTION : " + alerte)
     if debat and debat.mode == "débat":
         public = debat.public["personnes"] if debat.public else []
-        print(f"Débat : {len(debat.personnes)} participants ("
-              + ", ".join(f"{q.id}" + (f" = {q.nom}" if q.nom else "") for q in debat.personnes)
-              + f"), public : {len(public)} personnes, {len(ident['autres']['pistes'])} autres "
-              f"visages, {len(coupures)} pistes coupées. Planche : {racine}_personnes.jpg")
-        for ligne in personnes.resume(debat, a.debut):
-            print(ligne)
-        print(f"\nFichiers : {racine}_*")
-        print(rendu.AVERTISSEMENT)
-        return
+        out(f"Débat : {len(debat.personnes)} participants ("
+            + ", ".join(f"{q.id}" + (f" = {q.nom}" if q.nom else "") for q in debat.personnes)
+            + f"), public : {len(public)} personnes, {len(ident['autres']['pistes'])} autres "
+            f"visages, {len(coupures)} pistes coupées. Planche : {racine}_personnes.jpg")
+        lignes.extend(personnes.resume(debat, a.debut))
+        out(f"\nFichiers : {racine}_*")
+        out(rendu.AVERTISSEMENT)
+        return lignes
     if debat:
         q = debat.personnes[0]
-        print(f"Une personne reconnue : {q.id}" + (f" = {q.nom}" if q.nom else "")
-              + f", {q.temps_image_s:.0f} s à l'image. Planche : {racine}_personnes.jpg")
+        out(f"Une personne reconnue : {q.id}" + (f" = {q.nom}" if q.nom else "")
+            + f", {q.temps_image_s:.0f} s à l'image. Planche : {racine}_personnes.jpg")
     else:
-        print("Aucune personne reconnue (visages absents, trop brefs ou jamais de face).")
-    print(f"{len(s.moments)} moments atypiques, {len(s.figements)} figements, "
-          f"{len(s.convergences)} écarts simultanés sur plusieurs canaux, "
-          f"{len(s.brefs)} mouvements brefs.")
+        out("Aucune personne reconnue (visages absents, trop brefs ou jamais de face).")
+    out(f"{len(s.moments)} moments atypiques, {len(s.figements)} figements, "
+        f"{len(s.convergences)} écarts simultanés sur plusieurs canaux, "
+        f"{len(s.brefs)} mouvements brefs.")
     for k, mo in enumerate(s.moments):
         causes = ", ".join(f"{x['nom']} ({x['z']:+.1f})" for x in mo["signaux"])
-        print(f"  {k + 1}. {rendu.tc(a.debut + mo['t'])}  écart {mo['ecart']:.1f}  {causes}")
+        out(f"  {k + 1}. {rendu.tc(a.debut + mo['t'])}  écart {mo['ecart']:.1f}  {causes}")
     synthese = croise["synthese"]
-    print(f"\nCroisement : {synthese['passages']} passages ("
-          + ", ".join(f"{o} {nb}" for o, nb in synthese["repartition"].items() if nb) + ").")
+    out(f"\nCroisement : {synthese['passages']} passages ("
+        + ", ".join(f"{o} {nb}" for o, nb in synthese["repartition"].items() if nb) + ").")
     if synthese["themes"] and not synthese["classement"]:
-        print(f"  Aucun thème assez long pour un classement (minimum "
-              f"{croisement.TEMPS_THEME_MIN:.0f} s et {croisement.PASSAGES_THEME_MIN} passages "
-              "mesurés).")
+        out(f"  Aucun thème assez long pour un classement (minimum "
+            f"{croisement.TEMPS_THEME_MIN:.0f} s et {croisement.PASSAGES_THEME_MIN} passages "
+            "mesurés).")
     for sens in ("s'anime", "se retient"):
         themes = synthese["plus_marques"][sens][:3]
         if themes:
-            print(f"  Thèmes où la personne {sens} le plus : "
-                  + ", ".join(f"{t['theme']} ({t['part_pct']} % du temps)" for t in themes))
-    print("  Passages les plus marqués :")
+            out(f"  Thèmes où la personne {sens} le plus : "
+                + ", ".join(f"{t['theme']} ({t['part_pct']} % du temps)" for t in themes))
+    out("  Passages les plus marqués :")
     for p in synthese["passages_marques"]:
-        print(f"    {p['temps']}  écart {p['ecart_moyen']:.1f}  {p['orientation']:<10}  "
-              f"{p['sujet'] or '-'}")
-    print(f"Fichiers : {racine}_*")
-    print(rendu.AVERTISSEMENT)
+        out(f"    {p['temps']}  écart {p['ecart_moyen']:.1f}  {p['orientation']:<10}  "
+            f"{p['sujet'] or '-'}")
+    out(f"Fichiers : {racine}_*")
+    out(rendu.AVERTISSEMENT)
+    return lignes
 
 
 if __name__ == "__main__":

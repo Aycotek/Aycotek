@@ -182,6 +182,17 @@ Fragile (0.6) : seuil de participant réglé sur un seul débat entier (un inter
 parle moins de 1 % tombe dans le public sauf photo) ; seuil de coupure de piste réglé sur
 le même débat ; davantage de « se retient » en parlant, non relu passage par passage.
 
+## Ce que la version 0.7 ajoute (17 novembre 2026, non commitée)
+
+L'application fait tout seule, sans travail à la main : adresse YouTube en entrée
+(`telechargement.py`, yt-dlp en module, 720p mp4, Node.js, `<id>.mp4` + `<id>.source.json`,
+pas de retéléchargement), `--demander-noms` (planche ouverte, « A = ? » en console, noms
+appliqués comme `--noms` ; rien demandé hors console, NUL compris), `*_bilan.txt` (résumé
+de fin + source, date, version, avertissement), clé `source` du rapport ; le lanceur `.bat`
+accepte une adresse collée, active `--demander-noms`, affiche le bilan, ouvre les résultats.
+Aucun calcul d'analyse modifié : allocution entière, 0.6 commitée contre 0.7 (même cache),
+rapport et CSV identiques hors `outil` et `source`.
+
 ## Lancer
 
 ```bash

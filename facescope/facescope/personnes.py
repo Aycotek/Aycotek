@@ -176,10 +176,13 @@ def _participants(ident: dict, attribution, texte: dict) -> dict:
 def analyser(v: Visages, ident: dict, m0: Mesures, s0: signaux.Signaux, croise0: dict,
              son: dict | None, base: tuple | None, texte: dict | None,
              debat: bool = False, son_brut: np.ndarray | None = None,
-             noms: dict | None = None) -> Debat | None:
+             noms: dict | None = None, demander_noms=None) -> Debat | None:
     """`m0`, `s0`, `croise0` : l'analyse du visage dominant de chaque plan (0.4).
     `son_brut` (16 kHz) : si fourni, la voix complète la bouche pour savoir qui parle.
-    `noms` (--noms) : appliqués aux lettres définitives (participants)."""
+    `noms` (--noms) : appliqués aux lettres définitives (participants).
+    `demander_noms(ident, parole)` (--demander-noms) : appelée dès que les lettres des
+    participants sont définitives, avant toute analyse par personne ; les noms qu'elle
+    renvoie s'ajoutent à `noms`, comme s'ils venaient de --noms."""
     reconnues = ident["personnes"]
     if not reconnues:
         return None
@@ -187,6 +190,8 @@ def analyser(v: Visages, ident: dict, m0: Mesures, s0: signaux.Signaux, croise0:
     transcrit = bool(texte)
 
     if len(reconnues) == 1 and not debat:
+        if demander_noms:
+            noms = {**(noms or {}), **demander_noms(ident, {})}
         compte_noms = identite.nommer_lettres(ident, noms or {})
         r = reconnues[0]
         fiable_s = float(s0.ok.sum()) / fps
@@ -253,6 +258,11 @@ def analyser(v: Visages, ident: dict, m0: Mesures, s0: signaux.Signaux, croise0:
                     q["avant_exclusion_du_public"] = "public"
                     if q["locuteur"] not in lettres.values():
                         q["locuteur"], q["source"] = locuteurs.INDETERMINE, None
+    if demander_noms:
+        parole = {}
+        for q in (attribution.morceaux if attribution else []):
+            parole[q["locuteur"]] = parole.get(q["locuteur"], 0.0) + q["fin"] - q["debut"]
+        noms = {**(noms or {}), **demander_noms(ident, parole)}
     compte_noms = identite.nommer_lettres(ident, noms or {})
     reconnues = ident["personnes"]
     bases = croisement.passages_de_base(m0, texte, attribution)
