@@ -10,7 +10,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from . import audio as voix
+from . import audio as prosodie
 from . import parole
 from .analyse import Mesures
 
@@ -58,6 +58,9 @@ DUREE_FIGEMENT = 2.0    # secondes
 HAUT_VISAGE = {"AU1", "AU2", "AU4", "AU5", "AU6", "AU7", "AU9"}   # peu lié à l'articulation
 LARGEUR_MIN = 60        # pixels : en dessous, le visage n'est pas mesuré
 LARGEUR_FIABLE = 120    # pixels : en dessous, la mesure est signalée comme peu précise
+TEMPS_MIN_BASE = 20.0   # secondes d'images fiables : en dessous, pas de ligne de base par
+                        # personne (« pas assez de données ») ; dans un débat, en dessous
+                        # dans un rôle (parle / écoute), repli sur l'habitude globale
 
 
 @dataclass
@@ -85,6 +88,7 @@ class Signaux:
     moments: list
     brefs: list
     base: dict
+    details: dict              # signal -> (n,) écart signé à la ligne de base
 
 
 def _noyau(k, n) -> np.ndarray:
@@ -145,8 +149,56 @@ def _pics(x, separation, nb_max, seuil) -> list:
     return sorted(choisis)
 
 
+def fiable(m: Mesures) -> np.ndarray:
+    """Images où le visage est mesurable : assez grand, pas trop de profil, vu au moins une
+    demi-seconde d'affilée."""
+    largeur_visage = m.boite[:, 2] - m.boite[:, 0]
+    with np.errstate(invalid="ignore"):
+        ok = m.valide & (largeur_visage >= LARGEUR_MIN) & (np.abs(m.angles[:, 0]) <= 40)
+    return _stable(ok, int(0.5 * m.fps))
+
+
+def bouche_en_mouvement(m: Mesures, ok: np.ndarray) -> np.ndarray:
+    """La mâchoire bouge (écart type de son ouverture sur 0,5 s > 0,02), étendu de 0,6 s."""
+    n, fps = m.n, m.fps
+    if "jawOpen" in m.noms_bs:
+        machoire = np.mean([m.bs[:, m.noms_bs.index("jawOpen")].astype(float)], axis=0)
+    else:
+        machoire = np.full(n, np.nan)
+    m1, m2 = glissant(machoire, ok, 0.5 * fps), glissant(machoire ** 2, ok, 0.5 * fps)
+    with np.errstate(invalid="ignore"):
+        parle = np.sqrt(np.maximum(m2 - m1 ** 2, 0)) > 0.02
+    return np.convolve(parle.astype(float), _noyau(0.6 * fps, n), "same") > 0
+
+
+def references_par_role(ref: np.ndarray, voix: np.ndarray, fps: float) -> tuple:
+    """Débat : deux habitudes, l'une sur les images où la personne parle (`voix`), l'autre
+    sur toutes les autres (elle écoute). On bouge moins en écoutant : une habitude unique
+    ferait sortir l'écoute « en retrait » par construction. Un rôle qui a moins de
+    TEMPS_MIN_BASE secondes d'images de référence garde l'habitude globale (repli signalé).
+    Renvoie [(images à comparer, images de référence)] et le compte rendu par rôle."""
+    roles, info = [], {}
+    for role, images in (("parle", voix), ("ecoute", ~voix)):
+        dans = ref & images
+        assez = dans.sum() >= TEMPS_MIN_BASE * fps
+        roles.append((images, dans if assez else ref))
+        info[role] = {"images_de_reference_s": round(float(dans.sum()) / fps, 1),
+                      "reference": "habitude de la personne dans ce rôle" if assez else
+                      f"habitude globale (repli : moins de {TEMPS_MIN_BASE:.0f} s d'images "
+                      "fiables dans ce rôle)",
+                      "repli": not assez}
+    return roles, info
+
+
 def calculer(m: Mesures, audio: dict | None = None, base: tuple | None = None,
-             transcription: dict | None = None) -> Signaux:
+             transcription: dict | None = None, voix: np.ndarray | None = None,
+             par_role: bool = False) -> Signaux:
+    """`voix` (débat) : images où la parole est attribuée à cette personne. La voix et la
+    parole ne sont alors mesurées que sur ces images ; sans `voix`, la voix est mesurée quand
+    la mâchoire de la personne bouge et toute la transcription lui est comptée (comme en 0.4).
+    `par_role` (débat, avec `voix`) : le visage, la mobilité, le regard et les clignements
+    sont comparés à l'habitude de la personne dans son rôle à cette image (parle / écoute),
+    figement compris (voir references_par_role)."""
     n, fps = m.n, m.fps
     col = {nom: i for i, nom in enumerate(m.noms_bs)}
 
@@ -157,9 +209,7 @@ def calculer(m: Mesures, audio: dict | None = None, base: tuple | None = None,
     au = np.stack([moyenne(b) for _, _, b in UNITES], axis=1)
     k_au = {code: i for i, code in enumerate(CODES)}
     largeur_visage = m.boite[:, 2] - m.boite[:, 0]
-    with np.errstate(invalid="ignore"):
-        ok = m.valide & (largeur_visage >= LARGEUR_MIN) & (np.abs(m.angles[:, 0]) <= 40)
-    ok = _stable(ok, int(0.5 * fps))       # un visage vu moins d'une demi-seconde ne compte pas
+    ok = fiable(m)                         # un visage vu moins d'une demi-seconde ne compte pas
 
     ref, source = ok.copy(), "vidéo entière"
     if base:
@@ -167,12 +217,23 @@ def calculer(m: Mesures, audio: dict | None = None, base: tuple | None = None,
         if dans.sum() >= 3 * fps:
             ref, source = dans, f"passage {base[0]:.0f}-{base[1]:.0f} s"
 
+    # Une seule habitude (0.4, une personne), ou une par rôle (débat).
+    roles, info_roles = [(np.ones(n, bool), ref)], None
+    if par_role and voix is not None:
+        roles, info_roles = references_par_role(ref, voix.astype(bool), fps)
+
+    def z_roles(x, plancher):
+        z = np.full(n, np.nan)
+        for images, reference in roles:
+            z[images] = _z(x, reference, plancher)[0][images]
+        return z
+
     # Unités d'action : écart image par image, puis lissé sur une seconde.
     z_image = np.full_like(au, np.nan)
     z_au = np.full_like(au, np.nan)
     intensite = np.zeros_like(au)
     for k in range(au.shape[1]):
-        z_image[:, k], _ = _z(au[:, k], ref, 0.03)
+        z_image[:, k] = z_roles(au[:, k], 0.03)
         z_au[:, k] = glissant(z_image[:, k], ok, fps)
         v = au[ref, k]
         repos, haut = np.percentile(v, [10, 99.5]) if v.size else (0.0, 0.5)
@@ -187,11 +248,7 @@ def calculer(m: Mesures, audio: dict | None = None, base: tuple | None = None,
         expressions[:, e] = np.clip(np.minimum(1.0, pivot / 0.35) * total, 0, 1)
 
     # Parole : la mâchoire bouge.
-    machoire = au[:, k_au["AU26"]]
-    m1, m2 = glissant(machoire, ok, 0.5 * fps), glissant(machoire ** 2, ok, 0.5 * fps)
-    with np.errstate(invalid="ignore"):
-        parle = np.sqrt(np.maximum(m2 - m1 ** 2, 0)) > 0.02
-    parle = np.convolve(parle.astype(float), _noyau(0.6 * fps, n), "same") > 0
+    parle = bouche_en_mouvement(m, ok)
 
     # Tête et haut du visage : quantité de mouvement. Nettement sous l'habitude = figement.
     d = np.diff(m.angles, axis=0, prepend=m.angles[:1])
@@ -200,12 +257,12 @@ def calculer(m: Mesures, audio: dict | None = None, base: tuple | None = None,
     continu[0] = False
     continu[[c for c in m.coupes if c < n]] = False
     vitesse_tete = glissant(np.where(continu, vitesse, np.nan), continu, fps)
-    z_tete, _ = _z(np.log(vitesse_tete + 0.5), ref, 0.15)
+    z_tete = z_roles(np.log(vitesse_tete + 0.5), 0.15)
     haut = np.stack([glissant(au[:, k], ok, 0.2 * fps) for k, c in enumerate(CODES)
                      if c in HAUT_VISAGE], axis=1)
     delta = np.abs(np.diff(haut, axis=0, prepend=haut[:1])).sum(axis=1) * fps
     mobilite = glissant(np.where(continu, delta, np.nan), continu, 2 * fps)
-    z_mobilite, _ = _z(np.log(mobilite + 0.01), ref, 0.15)
+    z_mobilite = z_roles(np.log(mobilite + 0.01), 0.15)
     immobile = np.nan_to_num(-(z_mobilite + z_tete) / 2, nan=0.0)
     figements, i = [], 0
     while i < n:
@@ -227,10 +284,13 @@ def calculer(m: Mesures, audio: dict | None = None, base: tuple | None = None,
              - bs("eyeLookOutLeft") - bs("eyeLookInRight")) / 2
     vert = (bs("eyeLookUpLeft") + bs("eyeLookUpRight")
             - bs("eyeLookDownLeft") - bs("eyeLookDownRight")) / 2
-    h0 = np.median(horiz[ref]) if ref.any() else 0.0
-    v0 = np.median(vert[ref]) if ref.any() else 0.0
-    regard = glissant(np.hypot(horiz - h0, vert - v0), ok, fps)
-    z_regard, _ = _z(regard, ref, 0.03)
+    detour = np.full(n, np.nan)
+    for images, reference in roles:          # direction habituelle du regard, par rôle
+        h0 = np.median(horiz[reference]) if reference.any() else 0.0
+        v0 = np.median(vert[reference]) if reference.any() else 0.0
+        detour[images] = np.hypot(horiz - h0, vert - v0)[images]
+    regard = glissant(detour, ok, fps)
+    z_regard = z_roles(regard, 0.03)
 
     # Clignements par minute sur 10 secondes.
     # Un clignement = paupières fermées moins d'une demi-seconde (au-delà, c'est un plissement).
@@ -252,18 +312,22 @@ def calculer(m: Mesures, audio: dict | None = None, base: tuple | None = None,
     clignements = np.where(secondes >= 5,
                            np.convolve(debut_clign.astype(float), noyau, "same")
                            / np.maximum(secondes, 1e-6) * 60, np.nan)
-    z_clign, clign_base = _z(clignements, ref, 4.0)
+    _, clign_base = _z(clignements, ref, 4.0)
+    z_clign = z_roles(clignements, 4.0)
 
     # Voix : seulement quand la personne suivie parle.
-    f0, db = voix.sur_images(audio, m.t)
-    f0 = np.where(parle & ok, f0, np.nan)
-    db_parle = np.where(parle & ok, db, np.nan)
+    f0, db = prosodie.sur_images(audio, m.t)
+    sa_voix = parle if voix is None else voix
+    f0 = np.where(sa_voix & ok, f0, np.nan)
+    db_parle = np.where(sa_voix & ok, db, np.nan)
     z_f0, f0_base = _z(f0, ref, 8.0)
     z_db, _ = _z(db_parle, ref, 2.0)
 
     # Parole : débit, silences et hésitations, comparés à l'habitude de la personne.
     debit, pause, hesitations = parole.sur_images(transcription, m.t)
     ref_son = np.ones(n, bool) if not base else (m.t >= base[0]) & (m.t <= base[1])
+    if voix is not None:
+        ref_son = ref_son & voix
     with np.errstate(invalid="ignore"):
         z_debit, debit_base = _z(np.where(debit > 0, debit, np.nan), ref_son, 0.3)
     z_hesit, _ = _z(hesitations, ref_son, 3.0)
@@ -273,6 +337,9 @@ def calculer(m: Mesures, audio: dict | None = None, base: tuple | None = None,
         med = float(np.median(sil))
         ech = max(1.4826 * float(np.median(np.abs(sil - med))), 0.2)
         z_pause = np.where(pause > 0, (pause - med) / ech, 0.0)
+    if voix is not None:              # hors de ses tours de parole, la personne ne parle pas
+        for z in (z_debit, z_hesit, z_pause):
+            z[~voix] = np.nan
 
     visage = [z_au[:, k] for k, c in enumerate(CODES) if c not in HORS_VISAGE]
     groupes = {
@@ -361,6 +428,8 @@ def calculer(m: Mesures, audio: dict | None = None, base: tuple | None = None,
         "debit_mots_par_seconde": None if not np.isfinite(debit_base)
         else round(debit_base, 2),
     }
+    if info_roles is not None:
+        base_info["par_role"] = info_roles
     return Signaux(ok=ok, au=au, intensite=intensite, z_au=z_au, expressions=expressions,
                    parle=parle, vitesse_tete=vitesse_tete, z_mobilite=z_mobilite,
                    figements=figements, debit=debit, pause=pause,
@@ -369,4 +438,4 @@ def calculer(m: Mesures, audio: dict | None = None, base: tuple | None = None,
                    largeur_visage=float(np.nanmedian(largeur_visage)) if m.valide.any()
                    else float("nan"),
                    db=db, groupes=groupes, ecart=ecart, percentile=percentile,
-                   moments=moments, brefs=brefs, base=base_info)
+                   moments=moments, brefs=brefs, base=base_info, details=dict(details))

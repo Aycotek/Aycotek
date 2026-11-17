@@ -12,32 +12,46 @@ FENETRE = 640      # 40 ms
 F0_MIN, F0_MAX = 75.0, 400.0
 
 
-def extraire(chemin: str, debut: float = 0.0, duree: float | None = None) -> dict | None:
-    """Renvoie {'f0': Hz ou NaN, 'db': dBFS, 'pas': secondes} ou None s'il n'y a pas de son."""
+def brut(chemin: str, debut: float = 0.0, duree: float | None = None) -> np.ndarray:
+    """Le son de l'extrait, mono, 16 kHz, en entiers 16 bits."""
     cmd = ["ffmpeg", "-v", "error", "-ss", f"{debut:.3f}"]
     if duree:
         cmd += ["-t", f"{duree:.3f}"]
     cmd += ["-i", chemin, "-vn", "-ac", "1", "-ar", str(FREQ), "-f", "s16le", "-"]
-    brut = subprocess.run(cmd, capture_output=True).stdout
-    x = np.frombuffer(brut, np.int16).astype(np.float32) / 32768.0
+    return np.frombuffer(subprocess.run(cmd, capture_output=True).stdout, np.int16)
+
+
+def extraire(chemin: str, debut: float = 0.0, duree: float | None = None) -> dict | None:
+    """Renvoie {'f0': Hz ou NaN, 'db': dBFS, 'pas': secondes} ou None s'il n'y a pas de son."""
+    x = brut(chemin, debut, duree).astype(np.float32) / 32768.0
     if x.size < FENETRE * 4:
         return None
 
     nb = 1 + (x.size - FENETRE) // PAS
-    idx = np.arange(FENETRE)[None, :] + PAS * np.arange(nb)[:, None]
-    trames = x[idx]
-    db = 20 * np.log10(np.sqrt((trames ** 2).mean(axis=1)) + 1e-9)
-
-    # Autocorrélation normalisée (via FFT) pour estimer la hauteur de la voix.
-    fen = trames * np.hanning(FENETRE)[None, :]
-    fen = fen - fen.mean(axis=1, keepdims=True)
-    spectre = np.fft.rfft(fen, 2 * FENETRE, axis=1)
-    ac = np.fft.irfft(spectre * np.conj(spectre), axis=1)[:, :FENETRE]
-    ac = ac / np.maximum(ac[:, :1], 1e-12)
     lag_min, lag_max = int(FREQ / F0_MAX), int(FREQ / F0_MIN)
-    zone = ac[:, lag_min:lag_max]
-    pic = zone.argmax(axis=1)
-    force = zone[np.arange(nb), pic]
+    hann = np.hanning(FENETRE)[None, :]
+    # Par blocs de trames : une vidéo de plusieurs heures ne tient pas en mémoire d'un coup.
+    BLOC = 20000
+    parts_db, parts_pic, parts_force = [], [], []
+    for a in range(0, nb, BLOC):
+        n = min(BLOC, nb - a)
+        idx = np.arange(FENETRE)[None, :] + PAS * np.arange(a, a + n)[:, None]
+        trames = x[idx]
+        parts_db.append(20 * np.log10(np.sqrt((trames ** 2).mean(axis=1)) + 1e-9))
+
+        # Autocorrélation normalisée (via FFT) pour estimer la hauteur de la voix.
+        fen = trames * hann
+        fen = fen - fen.mean(axis=1, keepdims=True)
+        spectre = np.fft.rfft(fen, 2 * FENETRE, axis=1)
+        ac = np.fft.irfft(spectre * np.conj(spectre), axis=1)[:, :FENETRE]
+        ac = ac / np.maximum(ac[:, :1], 1e-12)
+        zone = ac[:, lag_min:lag_max]
+        pic = zone.argmax(axis=1)
+        parts_pic.append(pic)
+        parts_force.append(zone[np.arange(n), pic])
+    db = np.concatenate(parts_db)
+    pic = np.concatenate(parts_pic)
+    force = np.concatenate(parts_force)
     f0 = FREQ / (pic + lag_min).astype(float)
 
     seuil_db = max(np.percentile(db, 95) - 30.0, -55.0)

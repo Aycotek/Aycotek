@@ -81,8 +81,28 @@ def _norme(mot: str) -> str:
     return re.sub(r"[^\w'-]", "", mot.lower().replace("’", "'"))
 
 
+def _couverture(tours: list):
+    """Fonction (a, b) -> secondes de tours de parole comprises entre a et b."""
+    xs, ys, total = [0.0], [0.0], 0.0
+    for a, b in sorted(tours):
+        if b <= a:
+            continue
+        a = max(a, xs[-1])
+        if b <= a:
+            continue
+        xs += [a, b]
+        ys += [total, total + (b - a)]
+        total += b - a
+    xs, ys = np.array(xs), np.array(ys)
+    return lambda a, b: np.interp(b, xs, ys) - np.interp(a, xs, ys)
+
+
 def sur_images(tr: dict | None, t: np.ndarray):
-    """Sur la grille des images : débit (mots/s), silence en cours (s), hésitations par minute."""
+    """Sur la grille des images : débit (mots/s), silence en cours (s), hésitations par minute.
+
+    Si la transcription est celle d'une seule personne dans un débat (clé « tours » : ses
+    tours de parole), le débit et les hésitations sont rapportés au temps de ses tours dans
+    la fenêtre, et un silence qui commence un nouveau tour n'est pas une pause."""
     n = len(t)
     vide = np.full(n, np.nan)
     if not tr or len(tr["mots"]) < 5:
@@ -92,24 +112,36 @@ def sur_images(tr: dict | None, t: np.ndarray):
     normes = [_norme(m["mot"]) for m in tr["mots"]]
     marque = np.array([w in HESITATIONS or (i > 0 and w == normes[i - 1] and len(w) > 1)
                        for i, w in enumerate(normes)])
+    nouveau = np.array([bool(m.get("nouveau_tour")) for m in tr["mots"]])
+    couvert = _couverture(tr["tours"]) if tr.get("tours") is not None else None
     centres = (d + f) / 2
     debit, pause, hesit = np.zeros(n), np.zeros(n), np.zeros(n)
     for i, ti in enumerate(t):
         a, b = np.searchsorted(centres, [ti - 2.5, ti + 2.5])
-        debit[i] = (b - a) / 5.0
+        if couvert is None:
+            debit[i] = (b - a) / 5.0
+        else:
+            c = couvert(ti - 2.5, ti + 2.5)
+            debit[i] = (b - a) / c if c >= 1.0 else 0.0
         a, b = np.searchsorted(centres, [ti - 10, ti + 10])
-        hesit[i] = marque[a:b].sum() * 3.0
+        if couvert is None:
+            hesit[i] = marque[a:b].sum() * 3.0
+        else:
+            c = couvert(ti - 10, ti + 10)
+            hesit[i] = marque[a:b].sum() * 60.0 / c if c >= 5.0 else 0.0
         k = np.searchsorted(d, ti)
-        if 0 < k < len(d) and ti >= f[k - 1] and d[k] - f[k - 1] >= 0.25:
+        if 0 < k < len(d) and ti >= f[k - 1] and d[k] - f[k - 1] >= 0.25 and not nouveau[k]:
             pause[i] = d[k] - f[k - 1]
     return debit, pause, hesit
 
 
 def silences(tr: dict | None) -> np.ndarray:
-    """Durées des silences entre deux mots (au moins un quart de seconde)."""
+    """Durées des silences entre deux mots (au moins un quart de seconde), sans compter le
+    silence qui précède un nouveau tour de parole (débat)."""
     if not tr or len(tr["mots"]) < 2:
         return np.array([])
-    ecarts = np.array([b["debut"] - a["fin"] for a, b in zip(tr["mots"][:-1], tr["mots"][1:])])
+    ecarts = np.array([b["debut"] - a["fin"] for a, b in zip(tr["mots"][:-1], tr["mots"][1:])
+                       if not b.get("nouveau_tour")])
     return ecarts[ecarts >= 0.25]
 
 

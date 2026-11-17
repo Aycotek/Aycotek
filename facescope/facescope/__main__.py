@@ -2,6 +2,7 @@
 
     python -m facescope interview.mp4
     python -m facescope interview.mp4 --debut 2:00 --duree 1:30 --base 0:05-0:35
+    python -m facescope debat.mp4 --format vertical --noms "A=Prénom Nom,B=Prénom Nom"
 """
 from __future__ import annotations
 
@@ -10,13 +11,19 @@ import csv
 import json
 import os
 import sys
+import time
 
 import numpy as np
 
-from . import audio, parole, rendu, rendu_vertical, signaux
-from .analyse import analyser
+from . import (analyse, audio, croisement, identite, locuteurs, parole, personnes, rendu,
+               rendu_vertical, signaux)
 
-VERSION = "0.3"
+VERSION = "0.6"
+PORTEE = ("Les clés ligne_de_base, moments_atypiques, figements, ecarts_simultanes, "
+          "croisement, mouvements_brefs et le fichier CSV portent, comme en 0.4, sur le visage "
+          "dominant de chaque plan avec une seule ligne de base et toute la parole. Dans un "
+          "débat, lire « personnes » : une ligne de base, des passages et une synthèse par "
+          "personne.")
 LIMITES = [
     "Aucune mesure ne permet de dire qu'une personne ment : la recherche ne valide pas la "
     "détection du mensonge par le visage.",
@@ -24,14 +31,31 @@ LIMITES = [
     "(question difficile, fatigue, lumière, montage, émotion sincère).",
     "Les unités d'action sont approchées par un modèle généraliste, pas codées par un expert FACS.",
     "L'expression affichée est une ressemblance à une configuration type, pas l'émotion ressentie.",
-    "Une seule personne est suivie par plan : le visage dominant. Dans une interview à deux, "
-    "la ligne de base peut mélanger les deux personnes.",
+    "Les personnes sont regroupées par ressemblance des visages (empreinte faciale) : deux "
+    "personnes très semblables peuvent être réunies, une même personne vue de profil ou de loin "
+    "peut rester dans « autres ». L'outil ne reconnaît personne : les noms viennent de "
+    "l'utilisateur.",
+    "Dans un débat, une personne reconnue qui n'est ni nommée par une photo ni assez parlante "
+    "est comptée dans le public : elle n'est ni analysée ni étiquetée. Un intervenant qui parle "
+    "très peu peut y tomber ; une photo de référence (--visages) le garde participant.",
+    "Dans un débat, la parole est attribuée par la bouche (la personne à l'image dont la "
+    "mâchoire bouge pendant les mots), puis par la voix (empreinte vocale comparée aux voix "
+    "repérées par la bouche). Quand deux personnes parlent en même temps, le morceau peut rester "
+    "« indéterminé » ; une interruption à l'intérieur d'une phrase n'est pas séparée ; une voix "
+    "jamais vue parler à l'image reste « voix hors champ ».",
     "À 25 images par seconde, un mouvement de moins de 80 ms n'est vu que sur 1 ou 2 images.",
     "La transcription est automatique : elle peut contenir des erreurs et efface souvent les "
     "hésitations (« euh »).",
-    "La transcription ne distingue pas les voix : la parole d'un journaliste est comptée avec "
-    "celle de la personne suivie.",
-    "Le bloc d'analyse (discours, véracité) vient d'un fichier rédigé à part : l'outil "
+    "Avec une seule personne reconnue, toute la parole transcrite lui est comptée, y compris "
+    "celle d'une voix hors champ (--debat pour la séparer).",
+    "Les thèmes des passages sont reconnus par une liste de mots-clés : un sujet abordé sans "
+    "ces mots n'est pas reconnu, et un mot-clé peut apparaître hors sujet.",
+    "L'orientation d'un passage (s'anime, se retient, mixte, habituel) suit une règle simple "
+    "aux seuils réglés à la main, non validée sur des extraits annotés. Elle décrit la direction "
+    "d'un écart, pas sa cause.",
+    "En parlant, « se retient » repose surtout sur les pauses, les hésitations et la baisse de "
+    "mobilité : un silence long n'y compte qu'à partir d'une pause de 2 s.",
+    "La vérification des faits vient d'un fichier rédigé à part (--analyse) : l'outil "
     "l'affiche, il ne vérifie pas les faits lui-même.",
 ]
 
@@ -64,16 +88,62 @@ def main() -> None:
     p.add_argument("--analyse", help="fichier JSON d'analyse (discours, véracité) à afficher")
     p.add_argument("--sans-parole", action="store_true", help="ne transcrit pas la parole")
     p.add_argument("--langue", default="fr", help="langue parlée (fr par défaut)")
-    p.add_argument("--sans-video", action="store_true", help="ne produit que les mesures")
+    p.add_argument("--sans-video", action="store_true",
+                   help="pas de vidéo annotée : produit seulement le rapport JSON, la planche "
+                        "des personnes et les mesures (CSV et cache), bien plus vite")
+    p.add_argument("--noms", help="noms des personnes, par lettre (ex. \"A=Prénom Nom,B=Prénom "
+                                  "Nom\") ; les lettres sont sur la planche *_personnes.jpg")
+    p.add_argument("--visages", help="dossier de photos de référence nommées « Prénom Nom.jpg » : "
+                                     "la personne la plus proche d'une photo prend son nom")
+    p.add_argument("--recalculer", action="store_true",
+                   help="refait l'analyse du visage même si le fichier *_mesures.npz existe")
+    p.add_argument("--debat", action="store_true",
+                   help="analyse par personne et attribution de la parole même si une seule "
+                        "personne est reconnue (voix hors champ séparée)")
+    p.add_argument("--sans-voix", action="store_true",
+                   help="dans un débat, attribue la parole par la bouche seule, sans empreinte "
+                        "vocale")
     a = p.parse_args()
+    if a.visages and not os.path.isdir(a.visages):
+        raise SystemExit(f"--visages : dossier introuvable : {a.visages}")
+    noms = identite.lire_noms(a.noms)
 
     os.makedirs(a.sortie, exist_ok=True)
     nom = os.path.splitext(os.path.basename(a.video))[0]
     racine = os.path.join(a.sortie, nom)
+    titre = os.path.basename(a.video)
 
-    print("1/3  Suivi du visage et mesures image par image…", file=sys.stderr)
-    m = analyser(a.video, a.modele, a.max_visages, a.debut, a.duree)
-    print("2/3  Voix et calcul des écarts…", file=sys.stderr)
+    # Les mesures image par image sont gardées dans *_mesures.npz : une relance (noms, autre
+    # passage rendu) ne refait pas l'analyse du visage.
+    debut_chrono = time.time()
+    cle = analyse.cle_cache(a.video, a.debut, a.duree, a.max_visages, a.modele)
+    fichier_mesures = racine + "_mesures.npz"
+    v = None if a.recalculer else analyse.charger(fichier_mesures, cle, a.video)
+    if v is not None:
+        print(f"1/4  Mesures relues dans {os.path.basename(fichier_mesures)} "
+              "(--recalculer pour refaire l'analyse)", file=sys.stderr)
+        source_mesures = "relues dans le fichier de mesures"
+    else:
+        print("1/4  Suivi des visages et mesures image par image…", file=sys.stderr)
+        v = analyse.analyser(a.video, a.modele, a.max_visages, a.debut, a.duree)
+        analyse.enregistrer(v, fichier_mesures, cle)
+        source_mesures = "calculées"
+    duree_mesures = time.time() - debut_chrono
+    m = analyse.vue_dominante(v)
+
+    print("2/4  Qui est qui…", file=sys.stderr)
+    # Pistes coupées là où elles changent de personne : pour l'identité seulement (la vue du
+    # visage dominant, ci-dessus, reste celle de la 0.4).
+    v, coupures = identite.separer_pistes(v)
+    ident = identite.regrouper(v)
+    ident["details"]["pistes_coupees"] = [
+        {"piste": c["piste"], "temps": rendu.tc(a.debut + c["image"] / m.fps),
+         "temps_s": round(a.debut + c["image"] / m.fps, 2), "similarite": c["similarite"]}
+        for c in coupures]
+    photos = identite.empreintes_photos(a.visages, a.modele) if a.visages else []
+    noms_et_photos = identite.nommer_photos(ident, photos)
+
+    print("3/4  Voix, parole et calcul des écarts…", file=sys.stderr)
     son = audio.extraire(a.video, a.debut, m.n / m.fps)
     texte = None
     if not a.sans_parole:
@@ -86,6 +156,19 @@ def main() -> None:
             elements = json.load(f).get("elements", [])
     base = (a.base[0] - a.debut, a.base[1] - a.debut) if a.base else None
     s = signaux.calculer(m, son, base, texte)
+    croise = croisement.croiser(m, s, texte)
+    multi = a.debat or len(ident["personnes"]) > 1
+    son_brut = None
+    if multi and texte and not a.sans_voix:
+        son_brut = audio.brut(a.video, a.debut, m.n / m.fps)
+        son_brut = son_brut if son_brut.size >= audio.FREQ else None
+    debat = personnes.analyser(v, ident, m, s, croise, son, base, texte, a.debat, son_brut,
+                               noms)
+    noms_et_photos += debat.noms if debat else identite.nommer_lettres(ident, noms)
+    identite.finaliser_compte_rendu(noms_et_photos)
+    identite.planche(v, ident, racine + "_personnes.jpg",
+                     f"{titre}  {rendu.tc(a.debut)} – {rendu.tc(a.debut + m.n / m.fps)}",
+                     {p.id: p.temps_parole_s for p in debat.personnes} if debat else {})
 
     with open(racine + "_mesures.csv", "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f, delimiter=";")
@@ -104,10 +187,6 @@ def main() -> None:
                         f3(s.clignements[i]), f3(s.f0[i]), f3(s.db[i]),
                         *[f3(v) for v in s.expressions[i]], *[f3(v) for v in s.au[i]]])
 
-    def moment(mo):
-        return {"temps": rendu.tc(a.debut + mo["t"]), "temps_s": round(a.debut + mo["t"], 2),
-                "ecart": round(mo["ecart"], 2), "percentile": round(mo["percentile"], 1),
-                "signaux": mo["signaux"]}
     alertes, lv = [], s.largeur_visage
     if not np.isfinite(lv):
         alertes.append("Aucun visage suivi dans cette vidéo.")
@@ -118,6 +197,24 @@ def main() -> None:
     elif lv < signaux.LARGEUR_FIABLE:
         alertes.append(f"Visage de {lv:.0f} pixels de large : mesure peu précise. Viser au moins "
                        f"{signaux.LARGEUR_FIABLE} pixels (vidéo en 720p ou 1080p).")
+    for x in noms_et_photos:
+        if not x["retenue"]:
+            alertes.append(f"Nom non attribué ({x.get('photo') or x.get('noms')}) : {x['raison']}.")
+    if debat:
+        for pers in debat.personnes:
+            if pers.s is None:
+                alertes.append(f"Personne {pers.etiquette} : pas assez de données "
+                               f"({pers.temps_fiable_s:.0f} s d'images fiables, il en faut "
+                               f"{signaux.TEMPS_MIN_BASE:.0f}).")
+        repartie = locuteurs.repartition(debat.morceaux)
+        total = sum(repartie.values())
+        hors = repartie.get(locuteurs.HORS_CHAMP, 0.0)
+        if debat.mode == "une personne" and total and hors / total >= 0.25 \
+                and repartie.get(debat.personnes[0].id, 0.0) / total >= 0.25:
+            alertes.append(f"{100 * hors / total:.0f} % de la parole est dite pendant que la "
+                           "bouche de la personne reconnue ne bouge pas : une voix hors champ "
+                           "est peut-être comptée avec elle. Relancer avec --debat pour la "
+                           "séparer.")
     rapport = {
         "outil": f"facescope {VERSION}",
         "video": os.path.basename(a.video),
@@ -127,14 +224,11 @@ def main() -> None:
         "limites": LIMITES,
         "alertes": alertes,
         "ligne_de_base": s.base,
-        "moments_atypiques": [moment(mo) for mo in s.moments],
-        "figements": [{"temps": rendu.tc(a.debut + f["t"]), "temps_s": round(a.debut + f["t"], 2),
-                       "duree_s": round(f["duree"], 1), "z": f["z"]} for f in s.figements],
-        "ecarts_simultanes": [{"temps": rendu.tc(a.debut + c["t"]),
-                               "temps_s": round(a.debut + c["t"], 2),
-                               "duree_s": round(c["duree"], 1), "canaux": c["canaux"]}
-                              for c in s.convergences],
+        "moments_atypiques": personnes.moments(s, a.debut),
+        "figements": personnes.figements(s, a.debut),
+        "ecarts_simultanes": personnes.ecarts_simultanes(s, a.debut),
         "parole": parole.lexique(texte),
+        "croisement": croise,
         "analyse": elements,
         "transcription": [{"temps_s": round(a.debut + p["debut"], 2), "texte": p["texte"]}
                           for p in (texte or {}).get("phrases", [])],
@@ -142,33 +236,75 @@ def main() -> None:
                               "temps_s": round(a.debut + b["t"], 2),
                               "duree_s": round(b["duree"], 2), "unite": b["code"],
                               "nom": b["nom"], "z": b["z"]} for b in s.brefs],
+        "portee": PORTEE,
+        "mesures": {"source": source_mesures, "fichier": os.path.basename(fichier_mesures),
+                    "duree_s": round(duree_mesures, 1)},
     }
+    if debat:
+        rapport.update(personnes.rapport(debat, ident, a.debut, noms_et_photos))
+    else:
+        rapport.update({"mode": "aucune personne reconnue", "personnes": [],
+                        "identite": {"modele": identite.MODELE_EMPREINTE, **ident["details"],
+                                     "noms_et_photos": noms_et_photos}})
     with open(racine + "_rapport.json", "w", encoding="utf-8") as f:
         json.dump(rapport, f, ensure_ascii=False, indent=2)
 
     if not a.sans_video:
-        print("3/3  Rendu de la vidéo annotée…", file=sys.stderr)
+        print("4/4  Rendu de la vidéo annotée…", file=sys.stderr)
         passage = None
         if a.rendu:
             passage = (max(0, int((a.rendu[0] - a.debut) * m.fps)),
                        min(m.n, int((a.rendu[1] - a.debut) * m.fps)))
-        titre = os.path.basename(a.video)
         if a.format == "vertical":
             rendu_vertical.rendre(m, s, racine + "_facescope_vertical.mp4", titre, passage,
-                                  elements)
+                                  elements, croise, debat)
         else:
             rendu.rendre(m, s, racine + "_facescope.mp4", titre, passage)
 
     print(f"\nExtrait de {m.n / m.fps:.0f} s, {len(m.coupes) + 1} plans, visage exploitable sur "
-          f"{s.base['images_exploitables_pct']} % des images.")
+          f"{s.base['images_exploitables_pct']} % des images. Mesures du visage "
+          f"{source_mesures} en {duree_mesures:.0f} s.")
     for alerte in alertes:
         print("ATTENTION : " + alerte)
+    if debat and debat.mode == "débat":
+        public = debat.public["personnes"] if debat.public else []
+        print(f"Débat : {len(debat.personnes)} participants ("
+              + ", ".join(f"{q.id}" + (f" = {q.nom}" if q.nom else "") for q in debat.personnes)
+              + f"), public : {len(public)} personnes, {len(ident['autres']['pistes'])} autres "
+              f"visages, {len(coupures)} pistes coupées. Planche : {racine}_personnes.jpg")
+        for ligne in personnes.resume(debat, a.debut):
+            print(ligne)
+        print(f"\nFichiers : {racine}_*")
+        print(rendu.AVERTISSEMENT)
+        return
+    if debat:
+        q = debat.personnes[0]
+        print(f"Une personne reconnue : {q.id}" + (f" = {q.nom}" if q.nom else "")
+              + f", {q.temps_image_s:.0f} s à l'image. Planche : {racine}_personnes.jpg")
+    else:
+        print("Aucune personne reconnue (visages absents, trop brefs ou jamais de face).")
     print(f"{len(s.moments)} moments atypiques, {len(s.figements)} figements, "
           f"{len(s.convergences)} écarts simultanés sur plusieurs canaux, "
           f"{len(s.brefs)} mouvements brefs.")
     for k, mo in enumerate(s.moments):
         causes = ", ".join(f"{x['nom']} ({x['z']:+.1f})" for x in mo["signaux"])
         print(f"  {k + 1}. {rendu.tc(a.debut + mo['t'])}  écart {mo['ecart']:.1f}  {causes}")
+    synthese = croise["synthese"]
+    print(f"\nCroisement : {synthese['passages']} passages ("
+          + ", ".join(f"{o} {nb}" for o, nb in synthese["repartition"].items() if nb) + ").")
+    if synthese["themes"] and not synthese["classement"]:
+        print(f"  Aucun thème assez long pour un classement (minimum "
+              f"{croisement.TEMPS_THEME_MIN:.0f} s et {croisement.PASSAGES_THEME_MIN} passages "
+              "mesurés).")
+    for sens in ("s'anime", "se retient"):
+        themes = synthese["plus_marques"][sens][:3]
+        if themes:
+            print(f"  Thèmes où la personne {sens} le plus : "
+                  + ", ".join(f"{t['theme']} ({t['part_pct']} % du temps)" for t in themes))
+    print("  Passages les plus marqués :")
+    for p in synthese["passages_marques"]:
+        print(f"    {p['temps']}  écart {p['ecart_moyen']:.1f}  {p['orientation']:<10}  "
+              f"{p['sujet'] or '-'}")
     print(f"Fichiers : {racine}_*")
     print(rendu.AVERTISSEMENT)
 
